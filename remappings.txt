@@ -1,0 +1,7 @@
+@pythnetwork/=node_modules/@pythnetwork/
+eth-gas-reporter/=node_modules/eth-gas-reporter/
+forge-std/=lib/forge-std/src/
+hardhat/=node_modules/hardhat/
+strategy-builder-plugin/=node_modules/strategy-builder-plugin/
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@aave/core-v3/=lib/aave-v3-core/

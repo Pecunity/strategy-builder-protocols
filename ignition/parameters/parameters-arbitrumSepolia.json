@@ -1,1 +1,7 @@
-{}
+{
+  "$global": {
+    "WETH": "0x1dF462e2712496373A347f8ad10802a5E95f053D",
+    "oracle": "0xEf95A6B9e88Bd509Fd67BA741cf2b263DaC65c00",
+    "pool": "0xBfC91D59fdAA134A4ED45f7B584cAf96D7792Eff"
+  }
+}
