@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {BaseCondition} from "strategy-builder-plugin/src/condition/BaseCondition.sol";
+import {BaseCondition} from "strategy-builder-plugin/contracts/condition/BaseCondition.sol";
 import {IHealthFactorCondition} from "./interfaces/IHealthFactorCondition.sol";
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 
@@ -43,27 +43,25 @@ contract HealthFactorCondition is BaseCondition, IHealthFactorCondition {
         validCondition(condition)
     {
         conditions[msg.sender][_id] = condition;
+
+        _addCondition(_id);
+
         emit ConditionAdded(_id, msg.sender, condition);
     }
 
-    function deleteCondition(uint32 _id) public override conditionExist(_id) {
+    function deleteCondition(uint32 _id) public override  {
         super.deleteCondition(_id);
         delete conditions[msg.sender][_id];
 
-        emit ConditionDeleted(_id, msg.sender);
+        
     }
 
-    function updateCondition(uint32 _id) public view override conditionExist(_id) returns (bool) {
+    function updateCondition(uint32 _id) public view override  returns (bool) {
         return conditions[msg.sender][_id].updateable;
     }
 
-    // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    // ┃       Internal Functions         ┃
-    // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-    function _isConditionActive(address _wallet, uint32 _id) internal view override returns (bool) {
-        return conditions[_wallet][_id].healthFactor != 0;
-    }
+    
+    
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃         View Functions           ┃

@@ -1,10 +1,10 @@
 import hre from "hardhat";
 import path from "path";
 
-import AaveV3ActionsModule from "../ignition/modules/AaveV3ActionsModule";
+import AaveV3ConditionsModule from "../ignition/modules/AaveV3ConditionsModule";
 
 async function main() {
-  await hre.ignition.deploy(AaveV3ActionsModule, {
+  await hre.ignition.deploy(AaveV3ConditionsModule, {
     parameters: path.resolve(
       __dirname,
       `../ignition/parameters/parameters-${hre.network.name}.json`

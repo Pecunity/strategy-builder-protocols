@@ -28,5 +28,5 @@ interface IHealthFactorCondition {
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
     event ConditionAdded(uint32 id, address wallet, Condition condition);
-    event ConditionDeleted(uint32 id, address wallet);
+    
 }

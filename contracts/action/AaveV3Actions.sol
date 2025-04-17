@@ -8,6 +8,8 @@ import {DataTypes} from "@aave/core-v3/contracts/protocol/libraries/types/DataTy
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IAaveV3Actions} from "./interfaces/IAaveV3Actions.sol";
+import {IAction} from "strategy-builder-plugin/contracts/interfaces/IAction.sol";
+
 
 // https://github.com/bgd-labs/aave-address-book/blob/main/src/AaveV3Base.sol
 
@@ -557,5 +559,9 @@ contract AaveV3Actions is IAaveV3Actions {
             (, address token,,) = abi.decode(params, (address, address, uint256, uint256));
             return token;
         }
+    }
+
+     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
+        return interfaceId == type(IAction).interfaceId;
     }
 }

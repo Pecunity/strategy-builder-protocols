@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {BaseCondition} from "strategy-builder-plugin/src/condition/BaseCondition.sol";
+import {BaseCondition} from "strategy-builder-plugin/contracts/condition/BaseCondition.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import {IAaveV3PositionBalance} from "./interfaces/IAaveV3PositionBalance.sol";
@@ -43,21 +43,19 @@ contract AaveV3PositionBalance is BaseCondition, IAaveV3PositionBalance {
     function addCondition(uint32 _id, Condition calldata condition) external validCondition(condition) {
         conditions[msg.sender][_id] = condition;
 
-        activeConditions[msg.sender][_id] = true;
+        _addCondition(_id);
 
         emit ConditionAdded(_id, msg.sender, condition);
     }
 
-    function deleteCondition(uint32 _id) public override conditionExist(_id) {
+    function deleteCondition(uint32 _id) public override  {
         super.deleteCondition(_id);
         delete conditions[msg.sender][_id];
 
-        activeConditions[msg.sender][_id] = false;
-
-        emit ConditionDeleted(_id, msg.sender);
+        
     }
 
-    function updateCondition(uint32 _id) public view override conditionExist(_id) returns (bool) {
+    function updateCondition(uint32 _id) public view override  returns (bool) {
         return conditions[msg.sender][_id].updateable;
     }
 
@@ -65,9 +63,7 @@ contract AaveV3PositionBalance is BaseCondition, IAaveV3PositionBalance {
     // ┃       Internal Functions         ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    function _isConditionActive(address _wallet, uint32 _id) internal view override returns (bool) {
-        return activeConditions[_wallet][_id];
-    }
+  
 
     function _getPositionToken(address asset, PositionType positionType) internal view returns (address) {
         if (positionType == PositionType.STABLE_DEBT) {
@@ -132,4 +128,6 @@ contract AaveV3PositionBalance is BaseCondition, IAaveV3PositionBalance {
     function activeCondition(address wallet, uint32 id) public view returns (bool) {
         return activeConditions[wallet][id];
     }
+
+    
 }

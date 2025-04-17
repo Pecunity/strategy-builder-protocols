@@ -9,7 +9,7 @@ import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 contract HealthFactorConditionTest is Test {
     HealthFactorCondition healthFactorCondition;
     address public wallet = makeAddr("wallet");
-    uint32 public conditionId;
+    uint32 public conditionId = 12345;
 
     address public pool = makeAddr("pool");
 

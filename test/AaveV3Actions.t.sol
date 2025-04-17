@@ -6,7 +6,7 @@ import {AaveV3Actions} from "../contracts/action/AaveV3Actions.sol";
 import {IAaveV3Actions} from "../contracts/action/interfaces/IAaveV3Actions.sol";
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import {IAaveOracle} from "@aave/core-v3/contracts/interfaces/IAaveOracle.sol";
-import {IAction} from "strategy-builder-plugin/src/interfaces/IAction.sol";
+import {IAction} from "strategy-builder-plugin/contracts/interfaces/IAction.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 

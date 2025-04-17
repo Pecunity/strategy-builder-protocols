@@ -36,5 +36,4 @@ interface IAaveV3PositionBalance {
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
     event ConditionAdded(uint32 id, address wallet, Condition condition);
-    event ConditionDeleted(uint32 id, address wallet);
 }
