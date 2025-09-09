@@ -1,5 +1,3 @@
 {
-  "AAVEV3ActionsModule#AaveV3Actions": "0x2D5D80c4aF11403715E787fFd9965d195901d55B",
-  "AAVEV3ConditionsModule#AaveV3PositionBalance": "0x8e61B06eDEF8557CD1e4F530d96B22736Fcb34e0",
-  "AAVEV3ConditionsModule#HealthFactorCondition": "0xBB2702318d4A1991C46426D2b1592B0146B7e7E9"
+  "AAVEV3ActionsModule#AaveV3Actions": "0x02e8A2b46c704230423616238dED7e3892c11cE3"
 }

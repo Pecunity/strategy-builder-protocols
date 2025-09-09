@@ -1,6 +1,6 @@
 {
   "name": "aave-v3-strategy-builder",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "index.js",
   "scripts": {
     "compile": "hardhat compile && forge build",
@@ -19,6 +19,6 @@
     "hardhat": "^2.22.19"
   },
   "dependencies": {
-    "strategy-builder-plugin": "^1.0.1"
+    "strategy-builder-plugin": "^1.1.0"
   }
 }
