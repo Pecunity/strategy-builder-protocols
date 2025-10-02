@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {BaseCondition} from "strategy-builder-plugin/contracts/condition/BaseCondition.sol";
+import {BaseCondition} from "pecunity-strategy-builder/contracts/condition/BaseCondition.sol";
 import {IHealthFactorCondition} from "./interfaces/IHealthFactorCondition.sol";
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 
@@ -10,7 +10,8 @@ contract HealthFactorCondition is BaseCondition, IHealthFactorCondition {
     // ┃        State Variables           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     address public immutable pool;
-    mapping(address wallet => mapping(uint32 id => Condition condition)) private conditions;
+    mapping(address wallet => mapping(uint32 id => Condition condition))
+        private conditions;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃           Modifiers              ┃
@@ -37,11 +38,10 @@ contract HealthFactorCondition is BaseCondition, IHealthFactorCondition {
     // ┃       Public Functions           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    function addCondition(uint32 _id, Condition calldata condition)
-        external
-        conditionDoesNotExist(_id)
-        validCondition(condition)
-    {
+    function addCondition(
+        uint32 _id,
+        Condition calldata condition
+    ) external conditionDoesNotExist(_id) validCondition(condition) {
         conditions[msg.sender][_id] = condition;
 
         _addCondition(_id);
@@ -49,45 +49,50 @@ contract HealthFactorCondition is BaseCondition, IHealthFactorCondition {
         emit ConditionAdded(_id, msg.sender, condition);
     }
 
-    function deleteCondition(uint32 _id) public override  {
+    function deleteCondition(uint32 _id) public override {
         super.deleteCondition(_id);
         delete conditions[msg.sender][_id];
-
-        
     }
 
-    function updateCondition(uint32 _id) public view override  returns (bool) {
+    function updateCondition(uint32 _id) public view override returns (bool) {
         return conditions[msg.sender][_id].updateable;
     }
-
-    
-    
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃         View Functions           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    function checkCondition(address wallet, uint32 id) public view override returns (uint8) {
+    function checkCondition(
+        address wallet,
+        uint32 id
+    ) public view override returns (uint8) {
         Condition memory condition = conditions[wallet][id];
 
         //Get the actual health factor of the wallet
-        (,,,,, uint256 currentHF) = IPool(pool).getUserAccountData(wallet);
+        (, , , , , uint256 currentHF) = IPool(pool).getUserAccountData(wallet);
 
-        if (condition.comparison == Comparison.GREATER || condition.comparison == Comparison.GREATER_OR_EQUAL) {
+        if (
+            condition.comparison == Comparison.GREATER ||
+            condition.comparison == Comparison.GREATER_OR_EQUAL
+        ) {
             if (currentHF > condition.healthFactor) {
                 return 1;
             }
         }
 
-        if (condition.comparison == Comparison.LESS || condition.comparison == Comparison.LESS_OR_EQUAL) {
+        if (
+            condition.comparison == Comparison.LESS ||
+            condition.comparison == Comparison.LESS_OR_EQUAL
+        ) {
             if (currentHF < condition.healthFactor) {
                 return 1;
             }
         }
 
         if (
-            condition.comparison == Comparison.EQUAL || condition.comparison == Comparison.GREATER_OR_EQUAL
-                || condition.comparison == Comparison.LESS_OR_EQUAL
+            condition.comparison == Comparison.EQUAL ||
+            condition.comparison == Comparison.GREATER_OR_EQUAL ||
+            condition.comparison == Comparison.LESS_OR_EQUAL
         ) {
             if (currentHF == condition.healthFactor) {
                 return 1;
@@ -103,11 +108,17 @@ contract HealthFactorCondition is BaseCondition, IHealthFactorCondition {
         return 0;
     }
 
-    function isUpdateable(address wallet, uint32 id) public view override returns (bool) {
+    function isUpdateable(
+        address wallet,
+        uint32 id
+    ) public view override returns (bool) {
         return conditions[wallet][id].updateable;
     }
 
-    function walletCondition(address _wallet, uint32 _id) public view returns (Condition memory) {
+    function walletCondition(
+        address _wallet,
+        uint32 _id
+    ) public view returns (Condition memory) {
         return conditions[_wallet][_id];
     }
 }

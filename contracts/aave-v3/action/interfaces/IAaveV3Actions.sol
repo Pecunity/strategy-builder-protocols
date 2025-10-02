@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {IAction} from "strategy-builder-plugin/contracts/interfaces/IAction.sol";
-import {ITokenGetter} from "strategy-builder-plugin/contracts/interfaces/ITokenGetter.sol";
+import {IAction} from "pecunity-strategy-builder/contracts/interfaces/IAction.sol";
+import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
 
 interface IAaveV3Actions is IAction {
     // ┏━━━━━━━━━━━━━━━━━━━━┓
