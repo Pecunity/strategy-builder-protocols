@@ -41,7 +41,7 @@ contract AaveV3ActionsTest is Test {
 
         deal(asset, WALLET, amountIn);
 
-        IAction.PluginExecution[] memory executions = aaveActions.supply(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.supply(
             WALLET,
             asset,
             amountIn
@@ -63,7 +63,7 @@ contract AaveV3ActionsTest is Test {
 
         deal(WALLET, amountIn);
 
-        IAction.PluginExecution[] memory executions = aaveActions.supplyETH(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.supplyETH(
             WALLET,
             amountIn
         );
@@ -86,7 +86,7 @@ contract AaveV3ActionsTest is Test {
         supply(amountIn, asset);
 
         uint256 amountToWithdraw = 1 ether;
-        IAction.PluginExecution[] memory executions = aaveActions.withdraw(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.withdraw(
             WALLET,
             asset,
             amountToWithdraw
@@ -102,10 +102,8 @@ contract AaveV3ActionsTest is Test {
         supplyETH(amountIn);
 
         uint256 amountToWithdraw = 1 ether;
-        IAction.PluginExecution[] memory executions = aaveActions.withdrawETH(
-            WALLET,
-            amountToWithdraw
-        );
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
+            .withdrawETH(WALLET, amountToWithdraw);
 
         execute(executions);
 
@@ -137,7 +135,7 @@ contract AaveV3ActionsTest is Test {
         //Borrow 50 %
         uint256 borrowAmount = (50 * maxBorrowAmount) / 100;
 
-        IAction.PluginExecution[] memory executions = aaveActions.borrow(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.borrow(
             WALLET,
             assetToBorrow,
             borrowAmount,
@@ -175,7 +173,7 @@ contract AaveV3ActionsTest is Test {
         //Borrow 50 %
         uint256 borrowAmount = (50 * maxBorrowAmount) / 100;
 
-        IAction.PluginExecution[] memory executions = aaveActions.borrowETH(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.borrowETH(
             WALLET,
             borrowAmount,
             2
@@ -219,7 +217,7 @@ contract AaveV3ActionsTest is Test {
 
         uint256 repayAmount = (maxBorrowAmount * 10) / 100;
 
-        IAction.PluginExecution[] memory executions = aaveActions.repay(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.repay(
             WALLET,
             assetToBorrow,
             repayAmount,
@@ -247,7 +245,9 @@ contract AaveV3ActionsTest is Test {
 
         uint256 price = IAaveOracle(AAVE_V3_ORACLE).getAssetPrice(WETH);
 
-        uint256 maxBorrowAmount = ((availableBorrowsBase * 1e18) / price);
+        uint256 maxBorrowAmount = (((availableBorrowsBase * 1e18) * 99) /
+            100 /
+            price);
 
         borrowETH(maxBorrowAmount);
 
@@ -255,7 +255,7 @@ contract AaveV3ActionsTest is Test {
 
         uint256 repayAmount = (maxBorrowAmount * 10) / 100;
 
-        IAction.PluginExecution[] memory executions = aaveActions.repayETH(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.repayETH(
             WALLET,
             repayAmount,
             2
@@ -280,7 +280,7 @@ contract AaveV3ActionsTest is Test {
 
         deal(asset, WALLET, maxAmount);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .supplyPercentageOfBalance(WALLET, asset, percentage);
         execute(executions);
 
@@ -311,7 +311,7 @@ contract AaveV3ActionsTest is Test {
 
         deal(WALLET, maxAmount);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .supplyPercentageOfBalanceETH(WALLET, percentage);
         execute(executions);
 
@@ -358,7 +358,7 @@ contract AaveV3ActionsTest is Test {
 
         deal(asset, WALLET, walletBalance);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .changeSupplyToHealthFactor(WALLET, asset, targetHealthFactor);
         execute(executions);
 
@@ -376,7 +376,7 @@ contract AaveV3ActionsTest is Test {
         vm.assume(targetHealthFactor < 1e18);
 
         vm.expectRevert(IAaveV3Actions.HealthFactorNotValid.selector);
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .changeSupplyToHealthFactor(WALLET, WETH, targetHealthFactor);
         execute(executions);
     }
@@ -411,7 +411,7 @@ contract AaveV3ActionsTest is Test {
         //Action
         deal(WALLET, walletBalance);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .changeSupplyToHealthFactorETH(WALLET, targetHealthFactor);
         execute(executions);
 
@@ -440,7 +440,7 @@ contract AaveV3ActionsTest is Test {
             .getUserAccountData(WALLET);
 
         address assetToBorrow = IPool(AAVE_V3_POOL).getReservesList()[2];
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .borrowPercentageOfAvailable(WALLET, assetToBorrow, percentage, 2);
         execute(executions);
 
@@ -466,13 +466,13 @@ contract AaveV3ActionsTest is Test {
         uint256 percentage = bound(
             _percentage,
             1,
-            aaveActions.PERCENTAGE_FACTOR()
+            (aaveActions.PERCENTAGE_FACTOR() * 99) / 100
         );
 
         // Supply tokens
 
-        uint256 amountIn = 2 ether;
-        address asset = IPool(AAVE_V3_POOL).getReservesList()[1];
+        uint256 amountIn = 1 ether;
+        address asset = IPool(AAVE_V3_POOL).getReservesList()[0];
 
         supply(amountIn, asset);
 
@@ -480,7 +480,7 @@ contract AaveV3ActionsTest is Test {
         (, , uint256 availableBorrowsBaseBefore, , , ) = IPool(AAVE_V3_POOL)
             .getUserAccountData(WALLET);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .borrowPercentageOfAvailableETH(WALLET, percentage, 2);
         execute(executions);
 
@@ -520,7 +520,9 @@ contract AaveV3ActionsTest is Test {
 
         uint256 decimals = IERC20Metadata(assetToBorrow).decimals();
 
-        uint256 maxBorrowAmount = ((availableBorrowsBase * 10 ** decimals) /
+        uint256 maxBorrowAmount = (((availableBorrowsBase * 10 ** decimals) *
+            99) /
+            100 /
             price);
         borrow(maxBorrowAmount, assetToBorrow);
 
@@ -532,7 +534,7 @@ contract AaveV3ActionsTest is Test {
         ).balanceOf(WALLET);
         console.log(debtTokenAmount);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .repayPercentageOfDebt(WALLET, assetToBorrow, percentage, 2);
         execute(executions);
         uint256 currentDebtTokenAmount = IERC20(
@@ -568,7 +570,9 @@ contract AaveV3ActionsTest is Test {
             assetToBorrow
         );
         uint256 decimals = IERC20Metadata(assetToBorrow).decimals();
-        uint256 maxBorrowAmount = ((availableBorrowsBase * 10 ** decimals) /
+        uint256 maxBorrowAmount = (((availableBorrowsBase * 10 ** decimals) *
+            99) /
+            100 /
             price);
         borrowETH(maxBorrowAmount);
         // Repay percentage
@@ -577,7 +581,7 @@ contract AaveV3ActionsTest is Test {
         ).balanceOf(WALLET);
         console.log(debtTokenAmount);
 
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .repayPercentageOfDebtETH(WALLET, percentage, 2);
         execute(executions);
         uint256 currentDebtTokenAmount = IERC20(
@@ -614,7 +618,7 @@ contract AaveV3ActionsTest is Test {
         borrow((maxBorrowAmount * 50) / 100, assetToBorrow);
 
         deal(assetToBorrow, WALLET, walletBalance);
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .changeDebtToHealthFactor(
                 WALLET,
                 assetToBorrow,
@@ -652,7 +656,7 @@ contract AaveV3ActionsTest is Test {
         borrowETH((maxBorrowAmount * 50) / 100);
 
         deal(WALLET, walletBalance);
-        IAction.PluginExecution[] memory executions = aaveActions
+        (IAction.PluginExecution[] memory executions, ) = aaveActions
             .changeDebtToHealthFactorETH(WALLET, targetHealthFactor, 2);
         execute(executions);
         (, , , , , uint256 currentHF) = IPool(AAVE_V3_POOL).getUserAccountData(
@@ -669,7 +673,7 @@ contract AaveV3ActionsTest is Test {
     function supply(uint256 amount, address asset) internal {
         deal(asset, WALLET, amount);
 
-        IAction.PluginExecution[] memory executions = aaveActions.supply(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.supply(
             WALLET,
             asset,
             amount
@@ -681,7 +685,7 @@ contract AaveV3ActionsTest is Test {
     function supplyETH(uint256 amount) internal {
         deal(WALLET, amount);
 
-        IAction.PluginExecution[] memory executions = aaveActions.supplyETH(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.supplyETH(
             WALLET,
             amount
         );
@@ -689,7 +693,7 @@ contract AaveV3ActionsTest is Test {
     }
 
     function borrow(uint256 amount, address asset) internal {
-        IAction.PluginExecution[] memory executions = aaveActions.borrow(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.borrow(
             WALLET,
             asset,
             amount,
@@ -699,7 +703,7 @@ contract AaveV3ActionsTest is Test {
     }
 
     function borrowETH(uint256 amount) internal {
-        IAction.PluginExecution[] memory executions = aaveActions.borrowETH(
+        (IAction.PluginExecution[] memory executions, ) = aaveActions.borrowETH(
             WALLET,
             amount,
             2

@@ -90,20 +90,30 @@ contract AaveV3Actions is IAaveV3Actions {
         address wallet,
         address asset,
         uint256 amount
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](2);
 
         executions[0] = _approveToken(asset, amount);
 
         executions[1] = _supply(wallet, asset, amount);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function supplyETH(
         address wallet,
         uint256 amount
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](3);
 
         executions[0] = _depositToWETH(amount);
@@ -112,31 +122,41 @@ contract AaveV3Actions is IAaveV3Actions {
 
         executions[2] = _supply(wallet, WETH, amount);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function withdraw(
         address wallet,
         address asset,
         uint256 amount
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](1);
 
         executions[0] = _withdraw(wallet, asset, amount);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function withdrawETH(
         address wallet,
         uint256 amount
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](2);
 
         executions[0] = _withdraw(wallet, WETH, amount);
         executions[1] = _withdrawFromWETH(amount);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function borrow(
@@ -144,26 +164,36 @@ contract AaveV3Actions is IAaveV3Actions {
         address asset,
         uint256 amount,
         uint256 interestRateMode
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](1);
 
         executions[0] = _borrow(wallet, asset, amount, interestRateMode);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function borrowETH(
         address wallet,
         uint256 amount,
         uint256 interestRateMode
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](2);
 
         executions[0] = _borrow(wallet, WETH, amount, interestRateMode);
 
         executions[1] = _withdrawFromWETH(amount);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function repay(
@@ -171,21 +201,31 @@ contract AaveV3Actions is IAaveV3Actions {
         address asset,
         uint256 amount,
         uint256 interestRateMode
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](2);
 
         executions[0] = _approveToken(asset, amount);
 
         executions[1] = _repay(wallet, asset, amount, interestRateMode);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     function repayETH(
         address wallet,
         uint256 amount,
         uint256 interestRateMode
-    ) public view nonZeroAmount(amount) returns (PluginExecution[] memory) {
+    )
+        public
+        view
+        nonZeroAmount(amount)
+        returns (PluginExecution[] memory, bytes memory)
+    {
         PluginExecution[] memory executions = new PluginExecution[](3);
 
         executions[0] = _depositToWETH(amount);
@@ -194,7 +234,7 @@ contract AaveV3Actions is IAaveV3Actions {
 
         executions[2] = _repay(wallet, WETH, amount, interestRateMode);
 
-        return executions;
+        return (executions, abi.encode(amount));
     }
 
     /* ====== Special AAVE V3 Functions ====== */
@@ -208,7 +248,7 @@ contract AaveV3Actions is IAaveV3Actions {
         view
         nonZeroAmount(percentage)
         validPercentage(percentage)
-        returns (PluginExecution[] memory)
+        returns (PluginExecution[] memory, bytes memory)
     {
         uint256 supplyAmount = _calculatePercentageAmountOfAssetBalance(
             wallet,
@@ -228,7 +268,7 @@ contract AaveV3Actions is IAaveV3Actions {
         view
         nonZeroAmount(percentage)
         validPercentage(percentage)
-        returns (PluginExecution[] memory)
+        returns (PluginExecution[] memory, bytes memory)
     {
         uint256 supplyAmount = _calculatePercentageAmountOfAssetBalance(
             wallet,
@@ -243,7 +283,7 @@ contract AaveV3Actions is IAaveV3Actions {
     function changeSupplyToHealthFactorETH(
         address wallet,
         uint256 targetHealthFactor
-    ) public view returns (PluginExecution[] memory) {
+    ) public view returns (PluginExecution[] memory, bytes memory) {
         _validateHealtfactor(targetHealthFactor);
         (uint256 deltaAmount, bool isWithdraw) = _calculateDeltaCol(
             wallet,
@@ -253,7 +293,7 @@ contract AaveV3Actions is IAaveV3Actions {
 
         if (isWithdraw) {
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             address supplyToken = _getSupplyToken(WETH);
             uint256 maxWithdrawAmount = IERC20(supplyToken).balanceOf(wallet);
@@ -267,7 +307,7 @@ contract AaveV3Actions is IAaveV3Actions {
                 deltaAmount = maxAmount;
             }
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             return supplyETH(wallet, deltaAmount);
         }
@@ -277,7 +317,7 @@ contract AaveV3Actions is IAaveV3Actions {
         address wallet,
         address asset,
         uint256 targetHealthFactor
-    ) public view returns (PluginExecution[] memory) {
+    ) public view returns (PluginExecution[] memory, bytes memory) {
         _validateHealtfactor(targetHealthFactor);
         (uint256 deltaAmount, bool isWithdraw) = _calculateDeltaCol(
             wallet,
@@ -287,7 +327,7 @@ contract AaveV3Actions is IAaveV3Actions {
 
         if (isWithdraw) {
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             address supplyToken = _getSupplyToken(asset);
             uint256 maxWithdrawAmount = IERC20(supplyToken).balanceOf(wallet);
@@ -301,7 +341,7 @@ contract AaveV3Actions is IAaveV3Actions {
                 deltaAmount = maxAmount;
             }
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             return supply(wallet, asset, deltaAmount);
         }
@@ -317,7 +357,7 @@ contract AaveV3Actions is IAaveV3Actions {
         view
         nonZeroAmount(percentage)
         validPercentage(percentage)
-        returns (PluginExecution[] memory)
+        returns (PluginExecution[] memory, bytes memory)
     {
         uint256 borowAmount = _calculateBorrowAmount(wallet, asset, percentage);
 
@@ -333,7 +373,7 @@ contract AaveV3Actions is IAaveV3Actions {
         view
         nonZeroAmount(percentage)
         validPercentage(percentage)
-        returns (PluginExecution[] memory)
+        returns (PluginExecution[] memory, bytes memory)
     {
         uint256 borowAmount = _calculateBorrowAmount(wallet, WETH, percentage);
 
@@ -350,7 +390,7 @@ contract AaveV3Actions is IAaveV3Actions {
         view
         nonZeroAmount(percentage)
         validPercentage(percentage)
-        returns (PluginExecution[] memory)
+        returns (PluginExecution[] memory, bytes memory)
     {
         address debtToken = _getDebtToken(asset, interestRateMode);
 
@@ -368,7 +408,7 @@ contract AaveV3Actions is IAaveV3Actions {
         view
         nonZeroAmount(percentage)
         validPercentage(percentage)
-        returns (PluginExecution[] memory)
+        returns (PluginExecution[] memory, bytes memory)
     {
         address debtToken = _getDebtToken(WETH, interestRateMode);
         uint256 debt = IERC20(debtToken).balanceOf(wallet);
@@ -376,12 +416,18 @@ contract AaveV3Actions is IAaveV3Actions {
         return repayETH(wallet, repayAmount, interestRateMode);
     }
 
+    function borrowToHealthFactor()
+        public
+        view
+        returns (PluginExecution[] memory, bytes memory)
+    {}
+
     function changeDebtToHealthFactor(
         address wallet,
         address asset,
         uint256 targetHealthFactor,
         uint256 interestRateMode
-    ) public view returns (PluginExecution[] memory) {
+    ) public view returns (PluginExecution[] memory, bytes memory) {
         _validateHealtfactor(targetHealthFactor);
 
         (uint256 deltaAmount, bool isRepay) = _calculateDeltaDebt(
@@ -401,12 +447,12 @@ contract AaveV3Actions is IAaveV3Actions {
                 deltaAmount = maxAmount;
             }
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             return repay(wallet, asset, deltaAmount, interestRateMode);
         } else {
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             return borrow(wallet, asset, deltaAmount, interestRateMode);
         }
@@ -416,7 +462,7 @@ contract AaveV3Actions is IAaveV3Actions {
         address wallet,
         uint256 targetHealthFactor,
         uint256 interestRateMode
-    ) public view returns (PluginExecution[] memory) {
+    ) public view returns (PluginExecution[] memory, bytes memory) {
         _validateHealtfactor(targetHealthFactor);
         (uint256 deltaAmount, bool isRepay) = _calculateDeltaDebt(
             wallet,
@@ -434,12 +480,12 @@ contract AaveV3Actions is IAaveV3Actions {
                 deltaAmount = maxAmount;
             }
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             return repayETH(wallet, deltaAmount, interestRateMode);
         } else {
             if (deltaAmount == 0) {
-                return new PluginExecution[](0);
+                return (new PluginExecution[](0), "");
             }
             return borrowETH(wallet, deltaAmount, interestRateMode);
         }
@@ -711,6 +757,6 @@ contract AaveV3Actions is IAaveV3Actions {
     }
 
     function identifier() external pure returns (bytes4) {
-        return bytes4(keccak256("AaveV3Actions"));
+        return bytes4(keccak256("aave-v3-1.0.0"));
     }
 }
