@@ -114,6 +114,20 @@ interface IAaveV3Actions is IAction {
         uint256 interestRateMode
     ) external view returns (PluginExecution[] memory, bytes memory);
 
+    function repayToHealthFactor(
+        address wallet,
+        address asset,
+        uint256 targetHealthFactor,
+        uint256 interestRateMode
+    ) external view returns (PluginExecution[] memory, bytes memory);
+
+    function borrowToHealthFactor(
+        address wallet,
+        address asset,
+        uint256 targetHealthFactor,
+        uint256 interestRateMode
+    ) external view returns (PluginExecution[] memory, bytes memory);
+
     function changeDebtToHealthFactor(
         address wallet,
         address asset,

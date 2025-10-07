@@ -28,71 +28,80 @@ contract UniswapV3Zapper {
     // ┃    Public functions       ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+    struct ZapinParameter {
+        address token0; //The first token of the pool
+        address token1; //The second token of the pool
+        address tokenIn; //The input token (must be token0 or token1)
+        uint256 amountIn; //The amount of input tokens
+        uint24 poolFee; //The pool fee (500, 3000, 10000)
+        int24 tickLower; //The lower tick of the position
+        int24 tickUpper; //The upper tick of the position
+        address recipient; //The recipient of the LP NFT
+    }
+
     /// @notice Zap in with precise tick range calculations
-    /// @param token0 The first token of the pool
-    /// @param token1 The second token of the pool
-    /// @param tokenIn The input token (must be token0 or token1)
-    /// @param amountIn The amount of input tokens
-    /// @param poolFee The pool fee (500, 3000, 10000)
-    /// @param tickLower The lower tick of the position
-    /// @param tickUpper The upper tick of the position
-    /// @param recipient The recipient of the LP NFT
+    /// @param params the zap in parameter
     function zapInWithTickRange(
-        address token0,
-        address token1,
-        address tokenIn,
-        uint256 amountIn,
-        uint24 poolFee,
-        int24 tickLower,
-        int24 tickUpper,
-        address recipient
+        ZapinParameter memory params
     ) external returns (uint256 tokenId) {
-        require(amountIn > 0, "Invalid amount");
-        require(tokenIn == token0 || tokenIn == token1, "Invalid tokenIn");
-        require(tickLower < tickUpper, "Invalid tick range");
+        require(params.amountIn > 0, "Invalid amount");
+        require(
+            params.tokenIn == params.token0 || params.tokenIn == params.token1,
+            "Invalid tokenIn"
+        );
+        require(params.tickLower < params.tickUpper, "Invalid tick range");
 
         // Transfer input tokens
-        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(params.tokenIn).transferFrom(
+            msg.sender,
+            address(this),
+            params.amountIn
+        );
 
         // Get pool and current price
-        address poolAddress = getPoolAddress(token0, token1, poolFee);
+        address poolAddress = getPoolAddress(
+            params.token0,
+            params.token1,
+            params.poolFee
+        );
         IUniswapV3Pool pool = IUniswapV3Pool(poolAddress);
-        (uint160 sqrtPriceX96, int24 currentTick, , , , , ) = pool.slot0();
+        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
         // Calculate optimal amounts for the tick range
         (
             uint256 amount0Needed,
             uint256 amount1Needed
         ) = calculateOptimalAmounts(
-                amountIn,
+                params.amountIn,
                 sqrtPriceX96,
-                tickLower,
-                tickUpper,
-                token0 == tokenIn
+                params.tickLower,
+                params.tickUpper,
+                params.token0 == params.tokenIn
             );
 
         // Perform swaps to get the right token balance
         (uint256 finalAmount0, uint256 finalAmount1) = performOptimalSwaps(
-            token0,
-            token1,
-            tokenIn,
-            amountIn,
+            params.token0,
+            params.token1,
+            params.tokenIn,
+            params.amountIn,
             amount0Needed,
             amount1Needed,
-            poolFee
+            params.poolFee
         );
 
         // Mint the position
-        tokenId = mintPosition(
-            token0,
-            token1,
-            poolFee,
-            tickLower,
-            tickUpper,
-            finalAmount0,
-            finalAmount1,
-            recipient
-        );
+        //TODO: Implement withotu needing viaIR
+        // tokenId = mintPosition(
+        //     params.token0,
+        //     params.token1,
+        //     params.poolFee,
+        //     params.tickLower,
+        //     params.tickUpper,
+        //     finalAmount0,
+        //     finalAmount1,
+        //     params.recipient
+        // );
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓

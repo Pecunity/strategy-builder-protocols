@@ -416,11 +416,58 @@ contract AaveV3Actions is IAaveV3Actions {
         return repayETH(wallet, repayAmount, interestRateMode);
     }
 
-    function borrowToHealthFactor()
-        public
-        view
-        returns (PluginExecution[] memory, bytes memory)
-    {}
+    function borrowToHealthFactor(
+        address wallet,
+        address asset,
+        uint256 targetHealthFactor,
+        uint256 interestRateMode
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        _validateHealtfactor(targetHealthFactor);
+
+        (uint256 deltaAmount, bool isRepay) = _calculateDeltaDebt(
+            wallet,
+            asset,
+            targetHealthFactor
+        );
+        if (isRepay) {
+            return (new PluginExecution[](0), "");
+        }
+
+        return borrow(wallet, asset, deltaAmount, interestRateMode);
+    }
+
+    function repayToHealthFactor(
+        address wallet,
+        address asset,
+        uint256 targetHealthFactor,
+        uint256 interestRateMode
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        _validateHealtfactor(targetHealthFactor);
+
+        (uint256 deltaAmount, bool isRepay) = _calculateDeltaDebt(
+            wallet,
+            asset,
+            targetHealthFactor
+        );
+
+        if (isRepay) {
+            address debtToken = _getDebtToken(asset, interestRateMode);
+            uint256 maxAmount = IERC20(asset).balanceOf(wallet) >
+                IERC20(debtToken).balanceOf(wallet)
+                ? IERC20(asset).balanceOf(wallet)
+                : IERC20(debtToken).balanceOf(wallet);
+
+            if (deltaAmount > maxAmount) {
+                deltaAmount = maxAmount;
+            }
+            if (deltaAmount == 0) {
+                return (new PluginExecution[](0), "");
+            }
+            return repay(wallet, asset, deltaAmount, interestRateMode);
+        }
+
+        return (new PluginExecution[](0), "");
+    }
 
     function changeDebtToHealthFactor(
         address wallet,

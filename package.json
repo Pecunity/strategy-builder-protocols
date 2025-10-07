@@ -6,8 +6,8 @@
     "compile": "hardhat compile && forge build",
     "coverage": "forge coverage --report lcov && genhtml lcov.info  --output-dir coverage",
     "verify": "npx hardhat ignition verify chain-$CHAIN_ID",
-    "deploy:actions": "hardhat run scripts/deploy-actions.ts --network $NETWORK",
-    "deploy:conditions": "hardhat run scripts/deploy-conditions.ts --network $NETWORK"
+    "deploy:aaveV3:actions": "hardhat run scripts/deploy-aave-v3-actions.ts --network $NETWORK",
+    "deploy:aaveV3:conditions": "hardhat run scripts/deploy-aave-v3-conditions.ts --network $NETWORK"
   },
   "keywords": [],
   "author": "",
