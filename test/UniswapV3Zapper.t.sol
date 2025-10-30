@@ -4,6 +4,8 @@ pragma solidity ^0.8.28;
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {UniswapV3Zapper} from "../contracts/uniswap-v3/utils/UniswapV3Zapper.sol";
+import {IUniswapV3Zapper} from "../contracts/uniswap-v3/utils/interfaces/IUniswapV3Zapper.sol";
+
 import {ISwapRouterV3} from "../contracts/uniswap-v3/external/ISwapRouterV3.sol";
 
 contract UniswapV3ZapperTest is Test {
@@ -126,16 +128,20 @@ contract UniswapV3ZapperTest is Test {
         uint256 wethBefore = IERC20(TOKEN1).balanceOf(user);
 
         // Zap in
-        uint256 tokenId = zapper.zapInWithTickRange(
-            TOKEN0, // token0
-            TOKEN1, // token1
-            TOKEN0, // tokenIn
-            TEST_TOKEN0_AMOUNT, // amountIn
-            FEE, // poolFee
-            tickLower, // tickLower
-            tickUpper, // tickUpper
-            user // recipient
-        );
+
+        IUniswapV3Zapper.ZapinParameter memory params = IUniswapV3Zapper
+            .ZapinParameter({
+                token0: TOKEN0,
+                token1: TOKEN1, //The second token of the pool
+                tokenIn: TOKEN0, //The input token (must be token0 or token1)
+                amountIn: TEST_TOKEN0_AMOUNT, //The amount of input tokens
+                poolFee: FEE, //The pool fee (500, 3000, 10000)
+                tickLower: tickLower, //The lower tick of the position
+                tickUpper: tickUpper, //The upper tick of the position
+                recipient: user //The recipient of the LP NFT
+            });
+
+        uint256 tokenId = zapper.zapInWithTickRange(params);
 
         vm.stopPrank();
 

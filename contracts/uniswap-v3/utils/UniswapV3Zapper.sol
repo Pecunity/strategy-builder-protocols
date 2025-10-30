@@ -8,8 +8,9 @@ import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {IUniswapV3Zapper} from "./interfaces/IUniswapV3Zapper.sol";
 
-contract UniswapV3Zapper {
+contract UniswapV3Zapper is IUniswapV3Zapper {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       StateVariable       ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -27,17 +28,6 @@ contract UniswapV3Zapper {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    Public functions       ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-    struct ZapinParameter {
-        address token0; //The first token of the pool
-        address token1; //The second token of the pool
-        address tokenIn; //The input token (must be token0 or token1)
-        uint256 amountIn; //The amount of input tokens
-        uint24 poolFee; //The pool fee (500, 3000, 10000)
-        int24 tickLower; //The lower tick of the position
-        int24 tickUpper; //The upper tick of the position
-        address recipient; //The recipient of the LP NFT
-    }
 
     /// @notice Zap in with precise tick range calculations
     /// @param params the zap in parameter
@@ -92,16 +82,16 @@ contract UniswapV3Zapper {
 
         // Mint the position
         //TODO: Implement withotu needing viaIR
-        // tokenId = mintPosition(
-        //     params.token0,
-        //     params.token1,
-        //     params.poolFee,
-        //     params.tickLower,
-        //     params.tickUpper,
-        //     finalAmount0,
-        //     finalAmount1,
-        //     params.recipient
-        // );
+        tokenId = mintPosition(
+            params.token0,
+            params.token1,
+            params.poolFee,
+            params.tickLower,
+            params.tickUpper,
+            finalAmount0,
+            finalAmount1,
+            params.recipient
+        );
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -167,8 +157,7 @@ contract UniswapV3Zapper {
                 uint256 swapAmount = calculateSwapAmount(
                     amountIn,
                     amount0Needed,
-                    amount1Needed,
-                    true // swapping token0 for token1
+                    amount1Needed
                 );
 
                 if (swapAmount > 0) {
@@ -194,8 +183,7 @@ contract UniswapV3Zapper {
                 uint256 swapAmount = calculateSwapAmount(
                     amountIn,
                     amount1Needed,
-                    amount0Needed,
-                    false // swapping token1 for token0
+                    amount0Needed
                 );
 
                 if (swapAmount > 0) {
@@ -222,8 +210,7 @@ contract UniswapV3Zapper {
     function calculateSwapAmount(
         uint256 totalAmount,
         uint256 amountNeededOfInput,
-        uint256 amountNeededOfOutput,
-        bool isToken0Input
+        uint256 amountNeededOfOutput
     ) internal pure returns (uint256 swapAmount) {
         // Simple calculation: swap enough to get close to the needed ratio
         // This could be optimized with more sophisticated math

@@ -436,6 +436,25 @@ contract AaveV3Actions is IAaveV3Actions {
         return borrow(wallet, asset, deltaAmount, interestRateMode);
     }
 
+    function borrowToHealthFactorETH(
+        address wallet,
+        uint256 targetHealthFactor,
+        uint256 interestRateMode
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        _validateHealtfactor(targetHealthFactor);
+
+        (uint256 deltaAmount, bool isRepay) = _calculateDeltaDebt(
+            wallet,
+            WETH,
+            targetHealthFactor
+        );
+        if (isRepay) {
+            return (new PluginExecution[](0), "");
+        }
+
+        return borrowETH(wallet, deltaAmount, interestRateMode);
+    }
+
     function repayToHealthFactor(
         address wallet,
         address asset,
@@ -464,6 +483,37 @@ contract AaveV3Actions is IAaveV3Actions {
                 return (new PluginExecution[](0), "");
             }
             return repay(wallet, asset, deltaAmount, interestRateMode);
+        }
+
+        return (new PluginExecution[](0), "");
+    }
+
+    function repayToHealthFactorETH(
+        address wallet,
+        uint256 targetHealthFactor,
+        uint256 interestRateMode
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        _validateHealtfactor(targetHealthFactor);
+
+        (uint256 deltaAmount, bool isRepay) = _calculateDeltaDebt(
+            wallet,
+            WETH,
+            targetHealthFactor
+        );
+
+        if (isRepay) {
+            address debtToken = _getDebtToken(WETH, interestRateMode);
+            uint256 maxAmount = wallet.balance >
+                IERC20(debtToken).balanceOf(wallet)
+                ? wallet.balance
+                : IERC20(debtToken).balanceOf(wallet);
+            if (deltaAmount > maxAmount) {
+                deltaAmount = maxAmount;
+            }
+            if (deltaAmount == 0) {
+                return (new PluginExecution[](0), "");
+            }
+            return repayETH(wallet, deltaAmount, interestRateMode);
         }
 
         return (new PluginExecution[](0), "");
