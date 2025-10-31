@@ -11,6 +11,21 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IUniswapV3Zapper} from "./interfaces/IUniswapV3Zapper.sol";
 
 contract UniswapV3Zapper is IUniswapV3Zapper {
+    // ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    // ┃       Structs           ┃
+    // ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+    // Helper struct to carry data between steps (reduces stack usage)
+    struct PoolData {
+        address poolAddress;
+        uint160 sqrtPriceX96;
+    }
+
+    struct OptimalAmounts {
+        uint256 finalAmount0;
+        uint256 finalAmount1;
+    }
+
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       StateVariable       ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -48,48 +63,29 @@ contract UniswapV3Zapper is IUniswapV3Zapper {
             params.amountIn
         );
 
-        // Get pool and current price
-        address poolAddress = getPoolAddress(
+        // Step 1: Get pool and price (offload to helper)
+        PoolData memory poolData = _getPoolData(
             params.token0,
             params.token1,
             params.poolFee
         );
-        IUniswapV3Pool pool = IUniswapV3Pool(poolAddress);
-        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
-        // Calculate optimal amounts for the tick range
-        (
-            uint256 amount0Needed,
-            uint256 amount1Needed
-        ) = calculateOptimalAmounts(
-                params.amountIn,
-                sqrtPriceX96,
-                params.tickLower,
-                params.tickUpper,
-                params.token0 == params.tokenIn
-            );
-
-        // Perform swaps to get the right token balance
-        (uint256 finalAmount0, uint256 finalAmount1) = performOptimalSwaps(
-            params.token0,
-            params.token1,
-            params.tokenIn,
-            params.amountIn,
-            amount0Needed,
-            amount1Needed,
-            params.poolFee
+        // Step 2: Calculate optimal amounts (offload to helper)
+        OptimalAmounts memory optAmounts = _calculateAndSwapOptimal(
+            params,
+            poolData.sqrtPriceX96,
+            params.amountIn
         );
 
-        // Mint the position
-        //TODO: Implement withotu needing viaIR
+        // Step 3: Mint position (direct call with reduced params)
         tokenId = mintPosition(
             params.token0,
             params.token1,
             params.poolFee,
             params.tickLower,
             params.tickUpper,
-            finalAmount0,
-            finalAmount1,
+            optAmounts.finalAmount0,
+            optAmounts.finalAmount1,
             params.recipient
         );
     }
@@ -97,6 +93,47 @@ contract UniswapV3Zapper is IUniswapV3Zapper {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    Internal functions     ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+    // Internal: Fetch pool data
+    function _getPoolData(
+        address token0,
+        address token1,
+        uint24 poolFee
+    ) internal view returns (PoolData memory data) {
+        data.poolAddress = getPoolAddress(token0, token1, poolFee);
+        IUniswapV3Pool pool = IUniswapV3Pool(data.poolAddress);
+        (data.sqrtPriceX96, , , , , , ) = pool.slot0();
+    }
+
+    // Internal: Handle calculations and swaps
+    function _calculateAndSwapOptimal(
+        ZapinParameter memory params,
+        uint160 sqrtPriceX96,
+        uint256 amountIn
+    ) internal returns (OptimalAmounts memory amounts) {
+        // Calculate optimal needs
+        (
+            uint256 amount0Needed,
+            uint256 amount1Needed
+        ) = calculateOptimalAmounts(
+                amountIn,
+                sqrtPriceX96,
+                params.tickLower,
+                params.tickUpper,
+                params.token0 == params.tokenIn
+            );
+
+        // Perform swaps
+        (amounts.finalAmount0, amounts.finalAmount1) = performOptimalSwaps(
+            params.token0,
+            params.token1,
+            params.tokenIn,
+            amountIn,
+            amount0Needed,
+            amount1Needed,
+            params.poolFee
+        );
+    }
 
     /// @notice Calculate optimal token amounts for a specific tick range
     function calculateOptimalAmounts(
