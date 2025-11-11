@@ -4,5 +4,6 @@
   "AAVEV3ActionsModule#AaveV3Actions": "0x90995F0A60cCBFa58D62752630c216eb8B5B8830",
   "UniswapV3ActionsModule#UniswapV3LPActions": "0x4095B6aC5abbDEFFb690447dF6F487E8a2B387DF",
   "UniswapV3ActionsModule#UniswapV3Zapper": "0x3dCCd14cfFaBf08D293CDC3449011a82814433Aa",
-  "UniswapV3ActionsModule#UniswapV3OneSidedLPActions": "0xFe91B77FA803072B87a27cDC3CDA7C1323E06C1e"
+  "UniswapV3ActionsModule#UniswapV3OneSidedLPActions": "0xFe91B77FA803072B87a27cDC3CDA7C1323E06C1e",
+  "UniswapV3ConditionsModule#UniswapV3PositionRangeChecker": "0x282c424B8c4d843198563767456fec7E13298dC2"
 }
