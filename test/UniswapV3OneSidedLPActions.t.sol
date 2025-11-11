@@ -3,14 +3,17 @@ pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
 import {UniswapV3Zapper} from "../contracts/uniswap-v3/utils/UniswapV3Zapper.sol";
-import {UniswapV3OneSidedLPAction} from "../contracts/uniswap-v3/action/UniswapV3OneSidedLPActions.sol";
+import {UniswapV3OneSidedLPActions} from "../contracts/uniswap-v3/action/UniswapV3OneSidedLPActions.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
+import {IUniswapV3OneSidedLPActions} from "../contracts/uniswap-v3/action/interfaces/IUniswapV3OneSidedLPActions.sol";
 
 contract UniswapV3OneSidedLPActionsTest is Test {
-    error ExecutionFailed(UniswapV3OneSidedLPAction.PluginExecution execution);
+    error ExecutionFailed(
+        IUniswapV3OneSidedLPActions.PluginExecution execution
+    );
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       Constants           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -36,7 +39,7 @@ contract UniswapV3OneSidedLPActionsTest is Test {
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
     UniswapV3Zapper public zapper;
-    UniswapV3OneSidedLPAction public action;
+    UniswapV3OneSidedLPActions public action;
     address WALLET = makeAddr("wallet");
 
     // Test amounts
@@ -56,7 +59,7 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         // Deploy zapper
         zapper = new UniswapV3Zapper(SWAP_ROUTER, POSITION_MANAGER);
 
-        action = new UniswapV3OneSidedLPAction(address(zapper));
+        action = new UniswapV3OneSidedLPActions(address(zapper));
 
         // Fund user with test tokens
         // _fundUser();
@@ -73,14 +76,15 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         deal(TOKEN0, WALLET, amountIn);
 
         // Prepare params (assuming AddLiquidityOneSidedRangeParams struct)
-        UniswapV3OneSidedLPAction.AddLiquidityOneSidedRangeParams memory params = UniswapV3OneSidedLPAction
-            .AddLiquidityOneSidedRangeParams({
-                token0: TOKEN0,
-                token1: TOKEN1,
-                tokenIn: TOKEN0, // One-sided with token0
-                fee: FEE,
-                recipient: WALLET
-            });
+        IUniswapV3OneSidedLPActions.AddLiquidityOneSidedRangeParams
+            memory params = IUniswapV3OneSidedLPActions
+                .AddLiquidityOneSidedRangeParams({
+                    token0: TOKEN0,
+                    token1: TOKEN1,
+                    tokenIn: TOKEN0, // One-sided with token0
+                    fee: FEE,
+                    recipient: WALLET
+                });
 
         // Fetch current pool state for logging
         IUniswapV3Pool pool = IUniswapV3Pool(
@@ -101,7 +105,7 @@ contract UniswapV3OneSidedLPActionsTest is Test {
 
         // Call the function
         vm.prank(WALLET);
-        UniswapV3OneSidedLPAction.PluginExecution[] memory executions = action
+        IUniswapV3OneSidedLPActions.PluginExecution[] memory executions = action
             .addLiquidityOneSidedPercentageRange(percentage, amountIn, params);
 
         bytes memory result = execute(executions, 1);
@@ -131,11 +135,11 @@ contract UniswapV3OneSidedLPActionsTest is Test {
     }
 
     function execute(
-        UniswapV3OneSidedLPAction.PluginExecution[] memory executions,
+        IUniswapV3OneSidedLPActions.PluginExecution[] memory executions,
         uint256 output
     ) internal returns (bytes memory result) {
         for (uint256 i = 0; i < executions.length; i++) {
-            UniswapV3OneSidedLPAction.PluginExecution
+            IUniswapV3OneSidedLPActions.PluginExecution
                 memory execution = executions[i];
 
             vm.prank(WALLET);

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {IAction} from "pecunity-strategy-builder/contracts/interfaces/IAction.sol";
 import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
+import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
@@ -12,7 +13,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {IUniswapV3LPActionsBase} from "./interfaces/IUniswapV3LPActionsBase.sol";
 
-contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
+contract UniswapV3LPActionsBase is IAction, ITokenGetter {
     uint256 public constant PERCENTAGE_FACTOR = 1000;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -20,34 +21,24 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     address public immutable positionManager;
     address public immutable factory;
-    address public immutable router;
-    address public immutable swapActions;
-
     address public immutable WETH;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    Constructor            ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    constructor(
-        address _positionManager,
-        address _factory,
-        address _WETH,
-        address _swapActions
-    ) {
+    constructor(address _positionManager, address _factory, address _WETH) {
         positionManager = _positionManager;
         factory = _factory;
         WETH = _WETH;
-
-        swapActions = _swapActions;
     }
 
-    // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    // ┃    Public Basic Functions       ┃
-    // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    function mint(
+    // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    // ┃    Internal Basic Functions       ┃
+    // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    function _mint(
         INonfungiblePositionManager.MintParams memory params,
         bool payNative
-    ) public view returns (PluginExecution[] memory) {
+    ) internal view returns (PluginExecution[] memory) {
         PluginExecution[] memory executions = new PluginExecution[](
             _getExecutionNum(
                 params.amount0Desired,
@@ -108,9 +99,9 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
         return executions;
     }
 
-    function burn(
+    function _burn(
         uint256 tokenId
-    ) public view returns (PluginExecution[] memory) {
+    ) internal view returns (PluginExecution[] memory) {
         PluginExecution[] memory executions = new PluginExecution[](1);
 
         executions[0] = PluginExecution({
@@ -121,9 +112,9 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
         return executions;
     }
 
-    function collect(
+    function _collect(
         INonfungiblePositionManager.CollectParams memory params
-    ) public view returns (PluginExecution[] memory) {
+    ) internal view returns (PluginExecution[] memory) {
         PluginExecution[] memory executions = new PluginExecution[](1);
         INonfungiblePositionManager.CollectParams
             memory collectParams = INonfungiblePositionManager.CollectParams({
@@ -143,9 +134,9 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
         return executions;
     }
 
-    function decreaseLiquidity(
+    function _decreaseLiquidity(
         INonfungiblePositionManager.DecreaseLiquidityParams memory params
-    ) public view returns (PluginExecution[] memory) {
+    ) internal view returns (PluginExecution[] memory) {
         PluginExecution[] memory executions = new PluginExecution[](1);
 
         INonfungiblePositionManager.DecreaseLiquidityParams
@@ -169,10 +160,10 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
         return executions;
     }
 
-    function increaseLiquidity(
+    function _increaseLiquidity(
         INonfungiblePositionManager.IncreaseLiquidityParams memory params,
         bool payNative
-    ) public view returns (PluginExecution[] memory) {
+    ) internal view returns (PluginExecution[] memory) {
         (
             ,
             ,
@@ -240,10 +231,6 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
         return executions;
     }
 
-    // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    // ┃    Public Special Functions       ┃
-    // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃   Internal Functions      ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -280,89 +267,91 @@ contract UniswapV3LPActionsBase is IUniswapV3LPActionsBase, ITokenGetter {
     function getTokenForSelector(
         bytes4 selector,
         bytes memory params
-    ) external view override returns (address) {
-        if (selector == IUniswapV3LPActionsBase.mint.selector) {
-            INonfungiblePositionManager.MintParams memory _params = abi.decode(
-                params,
-                (INonfungiblePositionManager.MintParams)
-            );
-            return _params.token0;
-        }
+    ) external view virtual returns (address) {
+        // if (selector == IUniswapV3LPActionsBase.mint.selector) {
+        //     INonfungiblePositionManager.MintParams memory _params = abi.decode(
+        //         params,
+        //         (INonfungiblePositionManager.MintParams)
+        //     );
+        //     return _params.token0;
+        // }
 
-        if (selector == IUniswapV3LPActionsBase.increaseLiquidity.selector) {
-            INonfungiblePositionManager.IncreaseLiquidityParams
-                memory _params = abi.decode(
-                    params,
-                    (INonfungiblePositionManager.IncreaseLiquidityParams)
-                );
+        // if (selector == IUniswapV3LPActionsBase.increaseLiquidity.selector) {
+        //     INonfungiblePositionManager.IncreaseLiquidityParams
+        //         memory _params = abi.decode(
+        //             params,
+        //             (INonfungiblePositionManager.IncreaseLiquidityParams)
+        //         );
 
-            (
-                ,
-                ,
-                address token0,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
+        //     (
+        //         ,
+        //         ,
+        //         address token0,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
 
-            ) = INonfungiblePositionManager(positionManager).positions(
-                    _params.tokenId
-                );
-            return token0;
-        }
+        //     ) = INonfungiblePositionManager(positionManager).positions(
+        //             _params.tokenId
+        //         );
+        //     return token0;
+        // }
 
-        if (selector == IUniswapV3LPActionsBase.decreaseLiquidity.selector) {
-            INonfungiblePositionManager.DecreaseLiquidityParams
-                memory _params = abi.decode(
-                    params,
-                    (INonfungiblePositionManager.DecreaseLiquidityParams)
-                );
-            (
-                ,
-                ,
-                address token0,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
+        // if (selector == IUniswapV3LPActionsBase.decreaseLiquidity.selector) {
+        //     INonfungiblePositionManager.DecreaseLiquidityParams
+        //         memory _params = abi.decode(
+        //             params,
+        //             (INonfungiblePositionManager.DecreaseLiquidityParams)
+        //         );
+        //     (
+        //         ,
+        //         ,
+        //         address token0,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
 
-            ) = INonfungiblePositionManager(positionManager).positions(
-                    _params.tokenId
-                );
-            return token0;
-        }
+        //     ) = INonfungiblePositionManager(positionManager).positions(
+        //             _params.tokenId
+        //         );
+        //     return token0;
+        // }
 
-        if (selector == IUniswapV3LPActionsBase.collect.selector) {
-            INonfungiblePositionManager.CollectParams memory _params = abi
-                .decode(params, (INonfungiblePositionManager.CollectParams));
-            (
-                ,
-                ,
-                address token0,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
-                ,
+        // if (selector == IUniswapV3LPActionsBase.collect.selector) {
+        //     INonfungiblePositionManager.CollectParams memory _params = abi
+        //         .decode(params, (INonfungiblePositionManager.CollectParams));
+        //     (
+        //         ,
+        //         ,
+        //         address token0,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
+        //         ,
 
-            ) = INonfungiblePositionManager(positionManager).positions(
-                    _params.tokenId
-                );
-            return token0;
-        }
+        //     ) = INonfungiblePositionManager(positionManager).positions(
+        //             _params.tokenId
+        //         );
+        //     return token0;
+        // }
 
-        revert InvalidTokenGetterID();
+        // revert InvalidTokenGetterID();
+
+        return address(0);
     }
 
     function identifier() external pure virtual returns (bytes4) {

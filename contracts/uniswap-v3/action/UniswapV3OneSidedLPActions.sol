@@ -9,41 +9,46 @@ import {IUniswapV3Zapper} from "../utils/interfaces/IUniswapV3Zapper.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IAction} from "pecunity-strategy-builder/contracts/interfaces/IAction.sol";
+import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
+import {IUniswapV3OneSidedLPActions} from "./interfaces/IUniswapV3OneSidedLPActions.sol";
 
 /// @title UniswapV3OneSidedLPActions
 /// @notice Extends UniswapV3LPActionsBase to support one-sided (single-token) liquidity operations.
-contract UniswapV3OneSidedLPAction is IAction {
+contract UniswapV3OneSidedLPActions is
+    IUniswapV3OneSidedLPActions,
+    ITokenGetter
+{
     using SafeERC20 for IERC20;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃         Structs           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    /// @notice Input parameters for adding one-sided liquidity
-    struct AddLiquidityOneSidedParams {
-        address tokenIn;
-        address token0;
-        address token1;
-        uint24 fee;
-        int24 tickLower;
-        int24 tickUpper;
-        address recipient;
-    }
+    // /// @notice Input parameters for adding one-sided liquidity
+    // struct AddLiquidityOneSidedParams {
+    //     address tokenIn;
+    //     address token0;
+    //     address token1;
+    //     uint24 fee;
+    //     int24 tickLower;
+    //     int24 tickUpper;
+    //     address recipient;
+    // }
 
-    /// @notice Input parameters for one-sided liquidity with percentage-based range
-    struct AddLiquidityOneSidedRangeParams {
-        address tokenIn;
-        address token0;
-        address token1;
-        uint24 fee;
-        address recipient;
-    }
+    // /// @notice Input parameters for one-sided liquidity with percentage-based range
+    // struct AddLiquidityOneSidedRangeParams {
+    //     address tokenIn;
+    //     address token0;
+    //     address token1;
+    //     uint24 fee;
+    //     address recipient;
+    // }
 
-    /// @notice Input parameters for removing one-sided liquidity
-    struct RemoveLiquidityOneSidedParams {
-        uint256 tokenId;
-        address tokenOut;
-    }
+    // /// @notice Input parameters for removing one-sided liquidity
+    // struct RemoveLiquidityOneSidedParams {
+    //     uint256 tokenId;
+    //     address tokenOut;
+    // }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    State Variables        ┃
@@ -210,5 +215,34 @@ contract UniswapV3OneSidedLPAction is IAction {
 
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
         return interfaceId == type(IAction).interfaceId;
+    }
+
+    function getTokenForSelector(
+        bytes4 selector,
+        bytes memory params
+    ) external pure override returns (address) {
+        if (
+            selector ==
+            IUniswapV3OneSidedLPActions.addLiquidityOneSided.selector
+        ) {
+            AddLiquidityOneSidedParams memory oneSidedParams = abi.decode(
+                params,
+                (AddLiquidityOneSidedParams)
+            );
+            return oneSidedParams.tokenIn;
+        }
+
+        if (
+            selector ==
+            IUniswapV3OneSidedLPActions
+                .addLiquidityOneSidedPercentageRange
+                .selector
+        ) {
+            AddLiquidityOneSidedRangeParams memory oneSidedRangeParams = abi
+                .decode(params, (AddLiquidityOneSidedRangeParams));
+            return oneSidedRangeParams.tokenIn;
+        }
+
+        return address(0);
     }
 }

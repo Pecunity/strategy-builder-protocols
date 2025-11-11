@@ -21,24 +21,16 @@ contract UniswapV3LPActions is IUniswapV3LPActions, ITokenGetter {
     address public immutable positionManager;
     address public immutable factory;
     address public immutable router;
-    address public immutable swapActions;
 
     address public immutable WETH;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    Constructor            ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    constructor(
-        address _positionManager,
-        address _factory,
-        address _WETH,
-        address _swapActions
-    ) {
+    constructor(address _positionManager, address _factory, address _WETH) {
         positionManager = _positionManager;
         factory = _factory;
         WETH = _WETH;
-
-        swapActions = _swapActions;
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -423,10 +415,6 @@ contract UniswapV3LPActions is IUniswapV3LPActions, ITokenGetter {
 
         return executions;
     }
-
-    function addLiqudityWithOneToken(
-        AddLiqudityWithOneTokenParams memory params
-    ) external view returns (PluginExecution[] memory) {}
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃   Internal Functions      ┃

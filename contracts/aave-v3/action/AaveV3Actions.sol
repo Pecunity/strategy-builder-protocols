@@ -67,6 +67,9 @@ contract AaveV3Actions is IAaveV3Actions {
         ] = 1;
         tokenGetterIDs[IAaveV3Actions.repayPercentageOfDebtETH.selector] = 1;
         tokenGetterIDs[IAaveV3Actions.changeDebtToHealthFactorETH.selector] = 1;
+        tokenGetterIDs[IAaveV3Actions.repayPercentageOfBalanceETH.selector] = 1;
+        tokenGetterIDs[IAaveV3Actions.repayToHealthFactorETH.selector] = 1;
+        tokenGetterIDs[IAaveV3Actions.borrowToHealthFactorETH.selector] = 1;
 
         tokenGetterIDs[IAaveV3Actions.supplyPercentageOfBalance.selector] = 2;
         tokenGetterIDs[IAaveV3Actions.changeSupplyToHealthFactor.selector] = 2;
@@ -78,6 +81,9 @@ contract AaveV3Actions is IAaveV3Actions {
         tokenGetterIDs[IAaveV3Actions.borrowPercentageOfAvailable.selector] = 3;
         tokenGetterIDs[IAaveV3Actions.repayPercentageOfDebt.selector] = 3;
         tokenGetterIDs[IAaveV3Actions.changeDebtToHealthFactor.selector] = 3;
+        tokenGetterIDs[IAaveV3Actions.repayPercentageOfBalance.selector] = 3;
+        tokenGetterIDs[IAaveV3Actions.repayToHealthFactor.selector] = 3;
+        tokenGetterIDs[IAaveV3Actions.borrowToHealthFactor.selector] = 3;
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -517,6 +523,37 @@ contract AaveV3Actions is IAaveV3Actions {
         }
 
         return (new PluginExecution[](0), "");
+    }
+
+    function repayPercentageOfBalance(
+        address wallet,
+        address asset,
+        uint256 percentage,
+        uint256 interestRateMode
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        uint256 repayAmount = _calculatePercentageAmountOfAssetBalance(
+            wallet,
+            asset,
+            percentage,
+            false
+        );
+
+        return repay(wallet, asset, repayAmount, interestRateMode);
+    }
+
+    function repayPercentageOfBalanceETH(
+        address wallet,
+        uint256 percentage,
+        uint256 interestRateMode
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        uint256 repayAmount = _calculatePercentageAmountOfAssetBalance(
+            wallet,
+            WETH,
+            percentage,
+            true
+        );
+
+        return repayETH(wallet, repayAmount, interestRateMode);
     }
 
     function changeDebtToHealthFactor(
