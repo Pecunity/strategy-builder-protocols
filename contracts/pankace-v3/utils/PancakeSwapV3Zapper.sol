@@ -3,15 +3,15 @@ pragma solidity ^0.8.28;
 
 import {ISwapRouterV3} from "../external/ISwapRouterV3.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {LiquidityAmounts} from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {IUniswapV3Zapper} from "./interfaces/IUniswapV3Zapper.sol";
+import {IPancakeSwapV3Zapper} from "./interfaces/IPancakeSwapV3Zapper.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import {IPancakeSwapPoolState} from "../action/interfaces/IPancakeSwapPoolState.sol";
 
-contract UniswapV3Zapper is IUniswapV3Zapper {
+contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       Structs           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -102,7 +102,7 @@ contract UniswapV3Zapper is IUniswapV3Zapper {
         uint24 poolFee
     ) internal view returns (PoolData memory data) {
         data.poolAddress = getPoolAddress(token0, token1, poolFee);
-        IUniswapV3Pool pool = IUniswapV3Pool(data.poolAddress);
+        IPancakeSwapPoolState pool = IPancakeSwapPoolState(data.poolAddress);
         (data.sqrtPriceX96, , , , , , ) = pool.slot0();
     }
 
@@ -355,7 +355,7 @@ contract UniswapV3Zapper is IUniswapV3Zapper {
         returns (uint160 sqrtPriceX96, int24 tick, uint128 liquidity)
     {
         address poolAddress = getPoolAddress(token0, token1, poolFee);
-        IUniswapV3Pool pool = IUniswapV3Pool(poolAddress);
+        IPancakeSwapPoolState pool = IPancakeSwapPoolState(poolAddress);
         (sqrtPriceX96, tick, , , , , ) = pool.slot0();
         liquidity = pool.liquidity();
     }
@@ -370,7 +370,7 @@ contract UniswapV3Zapper is IUniswapV3Zapper {
         uint128 liquidity
     ) external view returns (uint256 amount0, uint256 amount1) {
         address poolAddress = getPoolAddress(token0, token1, poolFee);
-        IUniswapV3Pool pool = IUniswapV3Pool(poolAddress);
+        IPancakeSwapPoolState pool = IPancakeSwapPoolState(poolAddress);
         (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
         uint160 sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower);

@@ -1,0 +1,6 @@
+{
+  "AAVEV3ActionsModule#AaveV3Actions": "0x8C262ec2db34a6CdA55ba9aDe792225191e0754C",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0xf703ddFc66215A121eD74F75eBB47B399f1051EC",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x36CF4dC45A81c321d7Dc5652f332f1A1b7E72C14",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0xF6A33329c55c7e94C179dEfDeb10Bf05cEA27Ea3"
+}

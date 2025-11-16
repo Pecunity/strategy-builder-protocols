@@ -1,67 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {UniswapV3LPActionsBase} from "./UniswapV3LPActionsBase.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {IPancakeSwapPoolState} from "./interfaces/IPancakeSwapPoolState.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IUniswapV3Zapper} from "../utils/interfaces/IUniswapV3Zapper.sol";
+import {IPancakeSwapV3Zapper} from "../utils/interfaces/IPancakeSwapV3Zapper.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IAction} from "pecunity-strategy-builder/contracts/interfaces/IAction.sol";
 import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
-import {IUniswapV3OneSidedLPActions} from "./interfaces/IUniswapV3OneSidedLPActions.sol";
+import {IPancakeSwapV3OneSidedLPActions} from "./interfaces/IPancakeSwapV3OneSidedLPActions.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-/// @title UniswapV3OneSidedLPActions
-/// @notice Extends UniswapV3LPActionsBase to support one-sided (single-token) liquidity operations.
-contract UniswapV3OneSidedLPActions is
-    IUniswapV3OneSidedLPActions,
+/// @title PancakeSwapV3OneSidedLPActions
+/// @notice Extends PancakeSwapV3LPActionsBase to support one-sided (single-token) liquidity operations.
+contract PancakeSwapV3OneSidedLPActions is
+    IPancakeSwapV3OneSidedLPActions,
     ITokenGetter
 {
     using SafeERC20 for IERC20;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    // ┃         Structs           ┃
-    // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-    // /// @notice Input parameters for adding one-sided liquidity
-    // struct AddLiquidityOneSidedParams {
-    //     address tokenIn;
-    //     address token0;
-    //     address token1;
-    //     uint24 fee;
-    //     int24 tickLower;
-    //     int24 tickUpper;
-    //     address recipient;
-    // }
-
-    // /// @notice Input parameters for one-sided liquidity with percentage-based range
-    // struct AddLiquidityOneSidedRangeParams {
-    //     address tokenIn;
-    //     address token0;
-    //     address token1;
-    //     uint24 fee;
-    //     address recipient;
-    // }
-
-    // /// @notice Input parameters for removing one-sided liquidity
-    // struct RemoveLiquidityOneSidedParams {
-    //     uint256 tokenId;
-    //     address tokenOut;
-    // }
-
-    // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    State Variables        ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    IUniswapV3Zapper public immutable zapper;
+    IPancakeSwapV3Zapper public immutable zapper;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       Constructor         ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     constructor(address _zapper) {
-        zapper = IUniswapV3Zapper(_zapper);
+        zapper = IPancakeSwapV3Zapper(_zapper);
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -79,8 +48,8 @@ contract UniswapV3OneSidedLPActions is
         // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
         // ┃ 1. Prepare Zapper Inputs  ┃
         // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-        IUniswapV3Zapper.ZapinParameter memory zapParams = IUniswapV3Zapper
-            .ZapinParameter({
+        IPancakeSwapV3Zapper.ZapinParameter
+            memory zapParams = IPancakeSwapV3Zapper.ZapinParameter({
                 token0: params.token0,
                 token1: params.token1,
                 tokenIn: params.tokenIn,
@@ -106,7 +75,7 @@ contract UniswapV3OneSidedLPActions is
         // ┃ 3. Call zapper.zapIn()    ┃
         // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
         bytes memory zapData = abi.encodeWithSelector(
-            IUniswapV3Zapper.zapInWithTickRange.selector,
+            IPancakeSwapV3Zapper.zapInWithTickRange.selector,
             zapParams
         );
 
@@ -147,7 +116,7 @@ contract UniswapV3OneSidedLPActions is
         });
 
         // 1. Fetch current pool state
-        IUniswapV3Pool pool = IUniswapV3Pool(
+        IPancakeSwapPoolState pool = IPancakeSwapPoolState(
             zapper.getPoolAddress(params.token0, params.token1, params.fee)
         );
 
@@ -285,7 +254,7 @@ contract UniswapV3OneSidedLPActions is
     ) external pure override returns (address) {
         if (
             selector ==
-            IUniswapV3OneSidedLPActions.addLiquidityOneSided.selector
+            IPancakeSwapV3OneSidedLPActions.addLiquidityOneSided.selector
         ) {
             AddLiquidityOneSidedParams memory oneSidedParams = abi.decode(
                 params,
@@ -296,7 +265,7 @@ contract UniswapV3OneSidedLPActions is
 
         if (
             selector ==
-            IUniswapV3OneSidedLPActions
+            IPancakeSwapV3OneSidedLPActions
                 .addLiquidityOneSidedPercentageRange
                 .selector
         ) {

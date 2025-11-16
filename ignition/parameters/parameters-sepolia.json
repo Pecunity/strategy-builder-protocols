@@ -1,7 +1,7 @@
 {
   "$global": {
     "WETH": "0xC558DBdd856501FCd9aaF1E62eae57A9F0629a3c",
-    "oracle": "0xEf95A6B9e88Bd509Fd67BA741cf2b263DaC65c00",
+    "oracle": "0x2da88497588bf89281816106C7259e31AF45a663",
     "pool": "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951"
   },
   "UniswapV3ActionsModule": {

@@ -2,17 +2,17 @@
 pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
-import {UniswapV3Zapper} from "../contracts/uniswap-v3/utils/UniswapV3Zapper.sol";
-import {UniswapV3OneSidedLPActions} from "../contracts/uniswap-v3/action/UniswapV3OneSidedLPActions.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {PancakeSwapV3Zapper} from "../contracts/pankace-v3/utils/PancakeSwapV3Zapper.sol";
+import {PancakeSwapV3OneSidedLPActions} from "../contracts/pankace-v3/action/PancakeSwapV3OneSidedLPActions.sol";
+import {IPancakeSwapPoolState} from "../contracts/pankace-v3/action/interfaces/IPancakeSwapPoolState.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
-import {IUniswapV3OneSidedLPActions} from "../contracts/uniswap-v3/action/interfaces/IUniswapV3OneSidedLPActions.sol";
+import {IPancakeSwapV3OneSidedLPActions} from "../contracts/pankace-v3/action/interfaces/IPancakeSwapV3OneSidedLPActions.sol";
 
-contract UniswapV3OneSidedLPActionsTest is Test {
+contract PancakeSwapV3OneSidedLPActionsTest is Test {
     error ExecutionFailed(
-        IUniswapV3OneSidedLPActions.PluginExecution execution
+        IPancakeSwapV3OneSidedLPActions.PluginExecution execution
     );
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       Constants           ┃
@@ -22,7 +22,7 @@ contract UniswapV3OneSidedLPActionsTest is Test {
     uint256 bnbFork;
 
     // BNB Mainnet Contract Addresses
-    address constant SWAP_ROUTER = 0x1b81D678ffb9C0263b24A97847620C99d213eB14;
+    address constant SWAP_ROUTER = 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4;
     address constant POSITION_MANAGER =
         0x46A15B0b27311cedF172AB29E4f4766fbE7F4364; // BNB mainnet
     address constant FACTORY = 0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865;
@@ -38,8 +38,8 @@ contract UniswapV3OneSidedLPActionsTest is Test {
     // ┃       State Variables     ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-    UniswapV3Zapper public zapper;
-    UniswapV3OneSidedLPActions public action;
+    PancakeSwapV3Zapper public zapper;
+    PancakeSwapV3OneSidedLPActions public action;
     address WALLET = makeAddr("wallet");
 
     // Test amounts
@@ -57,9 +57,9 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         vm.selectFork(bnbFork);
 
         // Deploy zapper
-        zapper = new UniswapV3Zapper(SWAP_ROUTER, POSITION_MANAGER);
+        zapper = new PancakeSwapV3Zapper(SWAP_ROUTER, POSITION_MANAGER);
 
-        action = new UniswapV3OneSidedLPActions(address(zapper));
+        action = new PancakeSwapV3OneSidedLPActions(address(zapper));
 
         // Fund user with test tokens
         // _fundUser();
@@ -86,12 +86,12 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         // tickLower ≈ -68054 - 1178 = -69232
         // tickUpper ≈ -68054 + 1178 = -66876
 
-        assertEq(tickLower, -69232, "tickLower should be -69232");
-        assertEq(tickUpper, -66876, "tickUpper should be -66876");
+        assertEq(tickUpper, -67133, "tickUpper should be -67133");
+        assertEq(tickLower, -69646, "tickLower should be -69646");
 
         // Verify range
         int24 range = tickUpper - tickLower;
-        assertEq(range, 2356, "Range should be symmetric around currentTick");
+        assertEq(range, 2513, "Range should be symmetric around currentTick");
     }
 
     function testAddLiquidityOneSidedPercentageRange_5Percent() public {
@@ -101,8 +101,8 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         deal(TOKEN0, WALLET, amountIn);
 
         // Prepare params (assuming AddLiquidityOneSidedRangeParams struct)
-        IUniswapV3OneSidedLPActions.AddLiquidityOneSidedRangeParams
-            memory params = IUniswapV3OneSidedLPActions
+        IPancakeSwapV3OneSidedLPActions.AddLiquidityOneSidedRangeParams
+            memory params = IPancakeSwapV3OneSidedLPActions
                 .AddLiquidityOneSidedRangeParams({
                     token0: TOKEN0,
                     token1: TOKEN1,
@@ -112,62 +112,74 @@ contract UniswapV3OneSidedLPActionsTest is Test {
                 });
 
         // Fetch current pool state for logging
-        IUniswapV3Pool pool = IUniswapV3Pool(
+        IPancakeSwapPoolState pool = IPancakeSwapPoolState(
             zapper.getPoolAddress(params.token0, params.token1, params.fee)
         );
-        IPancakeSwapPool(address(pool)).slot0();
+        (
+            uint160 sqrtPriceX96,
+            int24 currentTick,
+            ,
+            ,
+            ,
+            ,
 
-        // console.log("SqrtPriceX96", sqrtPriceX96);
+        ) = IPancakeSwapPoolState(address(pool)).slot0();
 
-        // // Current price calculation: (sqrtPriceX96 / 2^96)^2, adjusted for decimals
-        // uint256 currentPrice = _sqrtPriceToPrice(
-        //     sqrtPriceX96,
-        //     IERC20Metadata(pool.token0()).decimals(),
-        //     IERC20Metadata(pool.token1()).decimals()
-        // );
+        console.log("SqrtPriceX96", sqrtPriceX96);
 
-        // console.log("=== Pool State ===");
-        // console.log("Current Tick:", int(currentTick));
-        // console.log("Current Price (Token1/Token0):", currentPrice);
-        // console.log("Sqrt Price X96:", sqrtPriceX96);
+        // Current price calculation: (sqrtPriceX96 / 2^96)^2, adjusted for decimals
+        uint256 currentPrice = _sqrtPriceToPrice(
+            sqrtPriceX96,
+            IERC20Metadata(pool.token0()).decimals(),
+            IERC20Metadata(pool.token1()).decimals()
+        );
 
-        // // Call the function
-        // vm.prank(WALLET);
-        // IUniswapV3OneSidedLPActions.PluginExecution[] memory executions = action
-        //     .addLiquidityOneSidedPercentageRange(percentage, amountIn, params);
+        console.log("=== Pool State ===");
+        console.log("Current Tick:", int(currentTick));
+        console.log("Current Price (Token1/Token0):", currentPrice);
+        console.log("Sqrt Price X96:", sqrtPriceX96);
 
-        // bytes memory result = execute(executions, 1);
+        // Call the function
+        vm.prank(WALLET);
+        IPancakeSwapV3OneSidedLPActions.PluginExecution[]
+            memory executions = action.addLiquidityOneSidedPercentageRange(
+                percentage,
+                amountIn,
+                params
+            );
 
-        // uint256 tokenId = abi.decode(result, (uint256));
+        bytes memory result = execute(executions, 1);
 
-        // (
-        //     ,
-        //     ,
-        //     address _token0,
-        //     address _token1,
-        //     ,
-        //     int24 currTickLower,
-        //     int24 currTickUpper,
-        //     uint128 liquidity,
-        //     ,
-        //     ,
-        //     ,
+        uint256 tokenId = abi.decode(result, (uint256));
 
-        // ) = INonfungiblePositionManager(POSITION_MANAGER).positions(tokenId);
+        (
+            ,
+            ,
+            address _token0,
+            address _token1,
+            ,
+            int24 currTickLower,
+            int24 currTickUpper,
+            uint128 liquidity,
+            ,
+            ,
+            ,
 
-        // console.log("=== LP Position State ===");
-        // console.log("Current Tick:", int(currentTick));
-        // console.log("Current Tick Lower:", int(currTickLower));
-        // console.log("Current Tick Upper:", int(currTickUpper));
-        // console.log("Current Liquidity:", uint(liquidity));
+        ) = INonfungiblePositionManager(POSITION_MANAGER).positions(tokenId);
+
+        console.log("=== LP Position State ===");
+        console.log("Current Tick:", int(currentTick));
+        console.log("Current Tick Lower:", int(currTickLower));
+        console.log("Current Tick Upper:", int(currTickUpper));
+        console.log("Current Liquidity:", uint(liquidity));
     }
 
     function execute(
-        IUniswapV3OneSidedLPActions.PluginExecution[] memory executions,
+        IPancakeSwapV3OneSidedLPActions.PluginExecution[] memory executions,
         uint256 output
     ) internal returns (bytes memory result) {
         for (uint256 i = 0; i < executions.length; i++) {
-            IUniswapV3OneSidedLPActions.PluginExecution
+            IPancakeSwapV3OneSidedLPActions.PluginExecution
                 memory execution = executions[i];
 
             vm.prank(WALLET);
@@ -213,19 +225,4 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         if (tick < 0 && tick % int24(spacing) != 0) rounded -= int24(spacing);
         return rounded;
     }
-}
-
-interface IPancakeSwapPool {
-    function slot0()
-        external
-        view
-        returns (
-            uint160 sqrtPriceX96,
-            int24 tick,
-            uint16 observationIndex,
-            uint16 observationCardinality,
-            uint16 observationCardinalityNext,
-            uint32 feeProtocol,
-            bool unlocked
-        );
 }

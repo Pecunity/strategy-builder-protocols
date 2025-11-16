@@ -3,11 +3,11 @@ pragma solidity ^0.8.28;
 
 import {IAction} from "pecunity-strategy-builder/contracts/interfaces/IAction.sol";
 import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
-import {IUniswapV3Zapper} from "../../utils/interfaces/IUniswapV3Zapper.sol";
+import {IPancakeSwapV3Zapper} from "../../utils/interfaces/IPancakeSwapV3Zapper.sol";
 
-/// @title IUniswapV3OneSidedLPAction
-/// @notice Interface for UniswapV3OneSidedLPAction
-interface IUniswapV3OneSidedLPActions is IAction {
+/// @title IPancakeSwapV3OneSidedLPAction
+/// @notice Interface for PancakeSwapV3OneSidedLPAction
+interface IPancakeSwapV3OneSidedLPActions is IAction {
     /// @notice Input parameters for adding one-sided liquidity
     struct AddLiquidityOneSidedParams {
         address tokenIn;
@@ -67,5 +67,5 @@ interface IUniswapV3OneSidedLPActions is IAction {
 
     /// @notice Zap helper contract
     /// @return zapper address
-    function zapper() external view returns (IUniswapV3Zapper);
+    function zapper() external view returns (IPancakeSwapV3Zapper);
 }

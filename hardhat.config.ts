@@ -31,6 +31,7 @@ const config: HardhatUserConfig = {
   networks: {
     arbitrumSepolia: getNetwork(Network.ARBITRUM_SEPOLIA),
     sepolia: getNetwork(Network.SEPOLIA),
+    bnbMainnet: getNetwork(Network.BNB),
   },
   etherscan: {
     apiKey: ARBISCAN_API_KEY,
