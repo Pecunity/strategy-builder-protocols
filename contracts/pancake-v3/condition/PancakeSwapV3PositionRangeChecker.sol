@@ -5,6 +5,7 @@ import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/inter
 import {BaseCondition} from "pecunity-strategy-builder/contracts/condition/BaseCondition.sol";
 import {IStrategyBuilderModule} from "pecunity-strategy-builder/contracts/interfaces/IStrategyBuilderModule.sol";
 import {IPancakeSwapPoolState} from "../action/interfaces/IPancakeSwapPoolState.sol";
+import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 
 contract PancakeSwapV3PositionRangeChecker is BaseCondition {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -197,26 +198,7 @@ contract PancakeSwapV3PositionRangeChecker is BaseCondition {
         // Get factory address from position manager
         address factory = positionManager.factory();
 
-        // Ensure token0 < token1
-        if (token0 > token1) {
-            (token0, token1) = (token1, token0);
-        }
-
-        // Compute pool address
-        pool = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            hex"ff",
-                            factory,
-                            keccak256(abi.encode(token0, token1, poolFee)),
-                            hex"e34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54" // POOL_INIT_CODE_HASH
-                        )
-                    )
-                )
-            )
-        );
+        pool = IUniswapV3Factory(factory).getPool(token0, token1, poolFee);
     }
 
     function walletCondition(

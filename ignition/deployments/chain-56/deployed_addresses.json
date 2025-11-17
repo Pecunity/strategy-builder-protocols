@@ -4,5 +4,5 @@
   "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0xFBa49Aa14263f906A1545e863221756203d66468",
   "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0xd24e4AF3Bb7B269ADcBcC0C2BD7167945Ad048a5",
   "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x99BfEA7af9226b343059Fb367Ae620Dbb0495F0A",
-  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x0fFa7Efde78A798995A1d6F7417F5E09644B1a8C"
+  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0xa38c12B7f558779E1A15D38890b72A348B226713"
 }
