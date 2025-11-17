@@ -30,7 +30,7 @@ contract UniswapV3PositionRangeChecker is BaseCondition {
 
     struct Condition {
         bytes32 contextId;
-        string contextKey;
+        bytes32 contextKey;
         PositionRangeStatusCheck rangeCheck;
     }
 

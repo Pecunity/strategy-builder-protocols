@@ -2,11 +2,11 @@
 pragma solidity ^0.8.28;
 
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {BaseCondition} from "pecunity-strategy-builder/contracts/condition/BaseCondition.sol";
 import {IStrategyBuilderModule} from "pecunity-strategy-builder/contracts/interfaces/IStrategyBuilderModule.sol";
+import {IPancakeSwapPoolState} from "../action/interfaces/IPancakeSwapPoolState.sol";
 
-contract UniswapV3PositionRangeChecker is BaseCondition {
+contract PancakeSwapV3PositionRangeChecker is BaseCondition {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃         Enums           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -30,7 +30,7 @@ contract UniswapV3PositionRangeChecker is BaseCondition {
 
     struct Condition {
         bytes32 contextId;
-        string contextKey;
+        bytes32 contextKey;
         PositionRangeStatusCheck rangeCheck;
     }
 
@@ -137,7 +137,7 @@ contract UniswapV3PositionRangeChecker is BaseCondition {
         address pool = _getPoolFromPosition(positionId);
         if (pool == address(0)) return 0;
 
-        (, int24 currentTick, , , , , ) = IUniswapV3Pool(pool).slot0();
+        (, int24 currentTick, , , , , ) = IPancakeSwapPoolState(pool).slot0();
 
         PositionRangeStatusCheck currentStatus = _getPositionStatus(
             currentTick,

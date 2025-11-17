@@ -11,7 +11,7 @@
     "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
   },
   "UniswapV3ConditionsModule": {
-    "strategyBuilder": "0x25865c88F803e4f71EBae7394aE7E97923faD97C",
+    "strategyBuilder": "0x4095B6aC5abbDEFFb690447dF6F487E8a2B387DF",
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   },
   "PancakeSwapV3ActionsModule": {
@@ -19,5 +19,9 @@
     "factory": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
     "swapRouter": "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4",
     "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+  },
+  "PancakeSwapV3ConditionsModule": {
+    "strategyBuilder": "0x4095B6aC5abbDEFFb690447dF6F487E8a2B387DF",
+    "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   }
 }
