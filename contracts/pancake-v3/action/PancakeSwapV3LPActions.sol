@@ -318,28 +318,20 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
     }
 
     function removeLiquidity(
-        RemoveLiquidityParams memory params
+        address wallet,
+        uint256 tokenId,
+        uint128 liquidity,
+        uint256 amount0Min,
+        uint256 amount1Min
     ) public view returns (PluginExecution[] memory) {
-        uint256 tokenId = _findPosition(
-            params.wallet,
-            params.token0,
-            params.token1,
-            params.fee,
-            params.tickLower,
-            params.tickUpper
-        );
-
-        if (tokenId == 0) {
-            return new PluginExecution[](0);
-        }
         PluginExecution[] memory executions = new PluginExecution[](2);
 
         executions[0] = decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: tokenId,
-                liquidity: params.liquidity,
-                amount0Min: params.amount0Min,
-                amount1Min: params.amount1Min,
+                liquidity: liquidity,
+                amount0Min: amount0Min,
+                amount1Min: amount1Min,
                 deadline: block.timestamp
             })
         )[0];
@@ -347,7 +339,7 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
         executions[1] = collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
-                recipient: params.wallet,
+                recipient: wallet,
                 amount0Max: type(uint128).max,
                 amount1Max: type(uint128).max
             })
@@ -356,20 +348,10 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
     }
 
     function removeLiquidityPercentage(
-        RemoveLiquidityPercentageParams memory params
+        address wallet,
+        uint256 tokenId,
+        uint256 percentage
     ) public view returns (PluginExecution[] memory) {
-        uint256 tokenId = _findPosition(
-            params.wallet,
-            params.token0,
-            params.token1,
-            params.fee,
-            params.tickLower,
-            params.tickUpper
-        );
-        if (tokenId == 0) {
-            return new PluginExecution[](0);
-        }
-
         (
             ,
             ,
@@ -385,10 +367,10 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
 
         ) = INonfungiblePositionManager(positionManager).positions(tokenId);
 
-        uint128 liquidity = (currentLiqudity * uint128(params.percentage)) /
+        uint128 liquidity = (currentLiqudity * uint128(percentage)) /
             uint128(PERCENTAGE_FACTOR);
         PluginExecution[] memory executions = new PluginExecution[](
-            params.percentage == PERCENTAGE_FACTOR ? 3 : 2
+            percentage == PERCENTAGE_FACTOR ? 3 : 2
         );
         executions[0] = decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
@@ -402,13 +384,13 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
         executions[1] = collect(
             INonfungiblePositionManager.CollectParams({
                 tokenId: tokenId,
-                recipient: params.wallet,
+                recipient: wallet,
                 amount0Max: type(uint128).max,
                 amount1Max: type(uint128).max
             })
         )[0];
 
-        if (params.percentage == PERCENTAGE_FACTOR) {
+        if (percentage == PERCENTAGE_FACTOR) {
             executions[2] = burn(tokenId)[0];
         }
 
@@ -609,23 +591,50 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
             return _params.token0;
         }
         if (selector == IPancakeSwapV3LPActions.removeLiquidity.selector) {
-            IPancakeSwapV3LPActions.RemoveLiquidityParams memory _params = abi
-                .decode(
-                    params,
-                    (IPancakeSwapV3LPActions.RemoveLiquidityParams)
-                );
-            return _params.token0;
+            (, uint256 tokenId, , , ) = abi.decode(
+                params,
+                (address, uint256, uint128, uint256, uint256)
+            );
+
+            (
+                ,
+                ,
+                address token0,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+
+            ) = INonfungiblePositionManager(positionManager).positions(tokenId);
+            return token0;
         }
         if (
             selector ==
             IPancakeSwapV3LPActions.removeLiquidityPercentage.selector
         ) {
-            IPancakeSwapV3LPActions.RemoveLiquidityPercentageParams
-                memory _params = abi.decode(
-                    params,
-                    (IPancakeSwapV3LPActions.RemoveLiquidityPercentageParams)
-                );
-            return _params.token0;
+            (, uint256 tokenId, ) = abi.decode(
+                params,
+                (address, uint256, uint256)
+            );
+            (
+                ,
+                ,
+                address token0,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                ,
+
+            ) = INonfungiblePositionManager(positionManager).positions(tokenId);
+            return token0;
         }
 
         if (selector == IPancakeSwapV3LPActions.mint.selector) {
@@ -713,7 +722,7 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
     }
 
     function identifier() external pure returns (bytes4) {
-        return bytes4(keccak256("uniswap-v3-lp-1.0.0"));
+        return bytes4(keccak256("pancake-v3-lp-1.0.0"));
     }
 
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {

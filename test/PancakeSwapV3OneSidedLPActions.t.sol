@@ -2,13 +2,13 @@
 pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
-import {PancakeSwapV3Zapper} from "../contracts/pankace-v3/utils/PancakeSwapV3Zapper.sol";
-import {PancakeSwapV3OneSidedLPActions} from "../contracts/pankace-v3/action/PancakeSwapV3OneSidedLPActions.sol";
-import {IPancakeSwapPoolState} from "../contracts/pankace-v3/action/interfaces/IPancakeSwapPoolState.sol";
+import {PancakeSwapV3Zapper} from "../contracts/pancake-v3/utils/PancakeSwapV3Zapper.sol";
+import {PancakeSwapV3OneSidedLPActions} from "../contracts/pancake-v3/action/PancakeSwapV3OneSidedLPActions.sol";
+import {IPancakeSwapPoolState} from "../contracts/pancake-v3/action/interfaces/IPancakeSwapPoolState.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
-import {IPancakeSwapV3OneSidedLPActions} from "../contracts/pankace-v3/action/interfaces/IPancakeSwapV3OneSidedLPActions.sol";
+import {IPancakeSwapV3OneSidedLPActions} from "../contracts/pancake-v3/action/interfaces/IPancakeSwapV3OneSidedLPActions.sol";
 
 contract PancakeSwapV3OneSidedLPActionsTest is Test {
     error ExecutionFailed(

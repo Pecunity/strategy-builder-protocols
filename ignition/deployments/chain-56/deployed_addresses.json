@@ -1,6 +1,7 @@
 {
   "AAVEV3ActionsModule#AaveV3Actions": "0x8C262ec2db34a6CdA55ba9aDe792225191e0754C",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0xf703ddFc66215A121eD74F75eBB47B399f1051EC",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x36CF4dC45A81c321d7Dc5652f332f1A1b7E72C14",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0xF6A33329c55c7e94C179dEfDeb10Bf05cEA27Ea3"
+  "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0x97366851B9768b4F176788de6f6bA572f163310A",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0xFBa49Aa14263f906A1545e863221756203d66468",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0xd24e4AF3Bb7B269ADcBcC0C2BD7167945Ad048a5",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x99BfEA7af9226b343059Fb367Ae620Dbb0495F0A"
 }

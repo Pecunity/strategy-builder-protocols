@@ -34,11 +34,7 @@ interface IPancakeSwapV3LPActions is IAction {
 
     struct RemoveLiquidityParams {
         address wallet;
-        address token0;
-        address token1;
-        uint24 fee;
-        int24 tickLower;
-        int24 tickUpper;
+        uint256 tokenId;
         uint128 liquidity;
         uint256 amount0Min;
         uint256 amount1Min;
@@ -46,11 +42,7 @@ interface IPancakeSwapV3LPActions is IAction {
 
     struct RemoveLiquidityPercentageParams {
         address wallet;
-        address token0;
-        address token1;
-        uint24 fee;
-        int24 tickLower;
-        int24 tickUpper;
+        uint256 tokenId;
         uint256 percentage;
     }
 
@@ -109,10 +101,16 @@ interface IPancakeSwapV3LPActions is IAction {
     ) external view returns (PluginExecution[] memory);
 
     function removeLiquidity(
-        RemoveLiquidityParams memory params
+        address wallet,
+        uint256 tokenId,
+        uint128 liquidity,
+        uint256 amount0Min,
+        uint256 amount1Min
     ) external view returns (PluginExecution[] memory);
 
     function removeLiquidityPercentage(
-        RemoveLiquidityPercentageParams memory params
+        address wallet,
+        uint256 tokenId,
+        uint256 percentage
     ) external view returns (PluginExecution[] memory);
 }

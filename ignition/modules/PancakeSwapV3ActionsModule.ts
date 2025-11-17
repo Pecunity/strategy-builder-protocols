@@ -8,6 +8,11 @@ export const PancakeSwapV3ActionsModule = buildModule(
     const WETH = m.getParameter("WETH9");
     const swapRouter = m.getParameter("swapRouter");
 
+    const pancakeSwapV3SwapActions = m.contract("PancakeSwapV3SwapActions", [
+      swapRouter,
+      WETH,
+    ]);
+
     const pancakeSwapV3LPActions = m.contract("PancakeSwapV3LPActions", [
       positionManager,
       factory,
@@ -24,6 +29,11 @@ export const PancakeSwapV3ActionsModule = buildModule(
       [zapper]
     );
 
-    return { pancakeSwapV3LPActions, zapper, pancakeSwapV3OneSidedLPActions };
+    return {
+      pancakeSwapV3LPActions,
+      zapper,
+      pancakeSwapV3OneSidedLPActions,
+      pancakeSwapV3SwapActions,
+    };
   }
 );

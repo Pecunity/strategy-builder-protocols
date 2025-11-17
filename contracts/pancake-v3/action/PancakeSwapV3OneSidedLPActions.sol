@@ -241,7 +241,7 @@ contract PancakeSwapV3OneSidedLPActions is
     // ┃   Interface Identifier    ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     function identifier() external pure override returns (bytes4) {
-        return bytes4(keccak256("uniswap-v3-one-sided-lp-1.0.0"));
+        return bytes4(keccak256("pancake-v3-one-sided-lp-1.0.0"));
     }
 
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
