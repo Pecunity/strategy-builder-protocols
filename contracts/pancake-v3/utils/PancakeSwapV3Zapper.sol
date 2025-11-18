@@ -83,10 +83,6 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
 
         require(pool != address(0), "POOL_NOT_FOUND");
 
-        // Pull price data
-        (uint160 sqrtPriceX96, , , , , , ) = IPancakeSwapPoolState(pool)
-            .slot0();
-
         address _token0 = IPancakeSwapPoolState(pool).token0();
         address _token1 = IPancakeSwapPoolState(pool).token1();
 
@@ -95,102 +91,161 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
             params.token1 = _token1;
         }
 
-        uint160 sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(
-            params.tickLower
-        );
-        uint160 sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(
-            params.tickUpper
-        );
-
         bool tokenInIsToken0 = params.tokenIn == params.token0;
 
-        uint256 amount0Needed = 0;
-        uint256 amount1Needed = 0;
-        if (tokenInIsToken0) {
-            uint128 liquidtyFrom0 = LiquidityAmounts.getLiquidityForAmount0(
-                sqrtPriceUpperX96,
-                sqrtPriceX96,
-                params.amountIn / 2
+        (
+            uint256 amount0Needed,
+            uint256 amount1Needed
+        ) = _computeRequiredAmounts(
+                tokenInIsToken0,
+                params.amountIn,
+                pool,
+                params.tickLower,
+                params.tickUpper
             );
 
-            (amount0Needed, amount1Needed) = LiquidityAmounts
-                .getAmountsForLiquidity(
-                    sqrtPriceX96,
-                    sqrtPriceLowerX96,
-                    sqrtPriceUpperX96,
-                    liquidtyFrom0
-                );
+        // if (tokenInIsToken0) {
+        //     uint128 liquidtyFrom0 = LiquidityAmounts.getLiquidityForAmount0(
+        //         sqrtPriceUpperX96,
+        //         sqrtPriceX96,
+        //         params.amountIn / 2
+        //     );
 
-            uint128 liquidtyFrom1 = LiquidityAmounts.getLiquidityForAmount1(
-                sqrtPriceLowerX96,
-                sqrtPriceX96,
-                amount1Needed
-            );
+        //     (amount0Needed, amount1Needed) = LiquidityAmounts
+        //         .getAmountsForLiquidity(
+        //             sqrtPriceX96,
+        //             sqrtPriceLowerX96,
+        //             sqrtPriceUpperX96,
+        //             liquidtyFrom0
+        //         );
 
-            (amount0Needed, amount1Needed) = LiquidityAmounts
-                .getAmountsForLiquidity(
-                    sqrtPriceX96,
-                    sqrtPriceLowerX96,
-                    sqrtPriceUpperX96,
-                    liquidtyFrom0 > liquidtyFrom1
-                        ? liquidtyFrom1
-                        : liquidtyFrom0
-                );
-        } else {
-            uint128 liquidtyFrom1 = LiquidityAmounts.getLiquidityForAmount1(
-                sqrtPriceLowerX96,
-                sqrtPriceX96,
-                params.amountIn / 2
-            );
+        //     uint128 liquidtyFrom1 = LiquidityAmounts.getLiquidityForAmount1(
+        //         sqrtPriceLowerX96,
+        //         sqrtPriceX96,
+        //         amount1Needed
+        //     );
 
-            (amount0Needed, amount1Needed) = LiquidityAmounts
-                .getAmountsForLiquidity(
-                    sqrtPriceX96,
-                    sqrtPriceLowerX96,
-                    sqrtPriceUpperX96,
-                    liquidtyFrom1
-                );
+        //     (amount0Needed, amount1Needed) = LiquidityAmounts
+        //         .getAmountsForLiquidity(
+        //             sqrtPriceX96,
+        //             sqrtPriceLowerX96,
+        //             sqrtPriceUpperX96,
+        //             liquidtyFrom0 > liquidtyFrom1
+        //                 ? liquidtyFrom1
+        //                 : liquidtyFrom0
+        //         );
+        // } else {
+        //     uint128 liquidtyFrom1 = LiquidityAmounts.getLiquidityForAmount1(
+        //         sqrtPriceLowerX96,
+        //         sqrtPriceX96,
+        //         params.amountIn / 2
+        //     );
 
-            uint128 liquidtyFrom0 = LiquidityAmounts.getLiquidityForAmount0(
-                sqrtPriceLowerX96,
-                sqrtPriceX96,
-                amount0Needed
-            );
+        //     (amount0Needed, amount1Needed) = LiquidityAmounts
+        //         .getAmountsForLiquidity(
+        //             sqrtPriceX96,
+        //             sqrtPriceLowerX96,
+        //             sqrtPriceUpperX96,
+        //             liquidtyFrom1
+        //         );
 
-            (amount0Needed, amount1Needed) = LiquidityAmounts
-                .getAmountsForLiquidity(
-                    sqrtPriceX96,
-                    sqrtPriceLowerX96,
-                    sqrtPriceUpperX96,
-                    liquidtyFrom0 < liquidtyFrom1
-                        ? liquidtyFrom1
-                        : liquidtyFrom0
-                );
-        }
+        //     uint128 liquidtyFrom0 = LiquidityAmounts.getLiquidityForAmount0(
+        //         sqrtPriceLowerX96,
+        //         sqrtPriceX96,
+        //         amount0Needed
+        //     );
 
-        IERC20(params.tokenIn).approve(address(swapRouter), type(uint256).max);
+        //     (amount0Needed, amount1Needed) = LiquidityAmounts
+        //         .getAmountsForLiquidity(
+        //             sqrtPriceX96,
+        //             sqrtPriceLowerX96,
+        //             sqrtPriceUpperX96,
+        //             liquidtyFrom0 < liquidtyFrom1
+        //                 ? liquidtyFrom1
+        //                 : liquidtyFrom0
+        //         );
+        // }
 
-        address tokenOut = tokenInIsToken0 ? params.token1 : params.token0;
+        // IERC20(params.tokenIn).approve(address(swapRouter), type(uint256).max);
 
-        ISwapRouterV3.ExactOutputSingleParams memory swapParams = ISwapRouterV3
-            .ExactOutputSingleParams({
-                tokenIn: params.tokenIn,
-                tokenOut: tokenOut,
-                fee: params.poolFee,
-                recipient: address(this),
-                amountOut: tokenInIsToken0 ? (amount1Needed) : amount0Needed,
-                amountInMaximum: type(uint256).max,
-                sqrtPriceLimitX96: 0
-            });
+        // address tokenOut = tokenInIsToken0 ? params.token1 : params.token0;
 
-        ISwapRouterV3(swapRouter).exactOutputSingle(swapParams);
+        // ISwapRouterV3.ExactOutputSingleParams memory swapParams = ISwapRouterV3
+        //     .ExactOutputSingleParams({
+        //         tokenIn: params.tokenIn,
+        //         tokenOut: tokenOut,
+        //         fee: params.poolFee,
+        //         recipient: address(this),
+        //         amountOut: tokenInIsToken0 ? (amount1Needed) : amount0Needed,
+        //         amountInMaximum: type(uint256).max,
+        //         sqrtPriceLimitX96: 0
+        //     });
 
+        // ISwapRouterV3(swapRouter).exactOutputSingle(swapParams);
+        _swapForNeededAmount(
+            params,
+            tokenInIsToken0,
+            amount0Needed,
+            amount1Needed
+        );
+
+        // uint256 token0Balance = IERC20(params.token0).balanceOf(address(this));
+        // uint256 token1Balance = IERC20(params.token1).balanceOf(address(this));
+
+        // IERC20(params.token0).approve(address(positionManager), token0Balance);
+        // IERC20(params.token1).approve(address(positionManager), token1Balance);
+
+        // INonfungiblePositionManager.MintParams
+        //     memory mintParams = INonfungiblePositionManager.MintParams({
+        //         token0: params.token0,
+        //         token1: params.token1,
+        //         fee: params.poolFee,
+        //         tickLower: params.tickLower,
+        //         tickUpper: params.tickUpper,
+        //         amount0Desired: token0Balance,
+        //         amount1Desired: token1Balance,
+        //         amount0Min: 0,
+        //         amount1Min: 0,
+        //         recipient: params.recipient,
+        //         deadline: block.timestamp
+        //     });
+
+        // (tokenId, , , ) = positionManager.mint(mintParams);
+
+        // uint256 token0BalanceAfter = IERC20(params.token0).balanceOf(
+        //     address(this)
+        // );
+        // uint256 token1BalanceAfter = IERC20(params.token1).balanceOf(
+        //     address(this)
+        // );
+        // if (token0BalanceAfter > 0) {
+        //     IERC20(params.token0).transfer(
+        //         params.recipient,
+        //         token0BalanceAfter
+        //     );
+        // }
+        // if (token1BalanceAfter > 0) {
+        //     IERC20(params.token1).transfer(
+        //         params.recipient,
+        //         token1BalanceAfter
+        //     );
+        // }
+
+        return _mintAndReturnDust(params);
+    }
+
+    function _mintAndReturnDust(
+        IPancakeSwapV3Zapper.ZapinParameter memory params
+    ) internal returns (uint256 tokenId) {
+        // Fetch balances after swaps
         uint256 token0Balance = IERC20(params.token0).balanceOf(address(this));
         uint256 token1Balance = IERC20(params.token1).balanceOf(address(this));
 
+        // Approve position manager
         IERC20(params.token0).approve(address(positionManager), token0Balance);
         IERC20(params.token1).approve(address(positionManager), token1Balance);
 
+        // Build mint parameters
         INonfungiblePositionManager.MintParams
             memory mintParams = INonfungiblePositionManager.MintParams({
                 token0: params.token0,
@@ -206,25 +261,155 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
                 deadline: block.timestamp
             });
 
+        // Mint position
         (tokenId, , , ) = positionManager.mint(mintParams);
 
-        uint256 token0BalanceAfter = IERC20(params.token0).balanceOf(
-            address(this)
-        );
-        uint256 token1BalanceAfter = IERC20(params.token1).balanceOf(
-            address(this)
-        );
-        if (token0BalanceAfter > 0) {
-            IERC20(params.token0).transfer(
-                params.recipient,
-                token0BalanceAfter
-            );
+        // Send leftover dust back to user
+        uint256 token0After = IERC20(params.token0).balanceOf(address(this));
+        uint256 token1After = IERC20(params.token1).balanceOf(address(this));
+
+        if (token0After > 0) {
+            IERC20(params.token0).transfer(params.recipient, token0After);
         }
-        if (token1BalanceAfter > 0) {
-            IERC20(params.token1).transfer(
-                params.recipient,
-                token1BalanceAfter
+        if (token1After > 0) {
+            IERC20(params.token1).transfer(params.recipient, token1After);
+        }
+    }
+
+    function _swapForNeededAmount(
+        IPancakeSwapV3Zapper.ZapinParameter memory params,
+        bool tokenInIsToken0,
+        uint256 amount0Needed,
+        uint256 amount1Needed
+    ) internal {
+        // Approve max (for safety + flexibility)
+        IERC20(params.tokenIn).approve(address(swapRouter), type(uint256).max);
+
+        // Determine output token
+        address tokenOut = tokenInIsToken0 ? params.token1 : params.token0;
+
+        // Determine how much output is needed
+        uint256 amountOutNeeded = tokenInIsToken0
+            ? amount1Needed
+            : amount0Needed;
+
+        // Build swap parameters
+        ISwapRouterV3.ExactOutputSingleParams memory swapParams = ISwapRouterV3
+            .ExactOutputSingleParams({
+                tokenIn: params.tokenIn,
+                tokenOut: tokenOut,
+                fee: params.poolFee,
+                recipient: address(this),
+                amountOut: amountOutNeeded,
+                amountInMaximum: type(uint256).max,
+                sqrtPriceLimitX96: 0
+            });
+
+        // Execute swap
+        ISwapRouterV3(swapRouter).exactOutputSingle(swapParams);
+    }
+
+    function _computeRequiredAmounts(
+        bool tokenInIsToken0,
+        uint256 amountIn,
+        address pool,
+        int24 tickLower,
+        int24 tickUpper
+    ) internal view returns (uint256 amount0Needed, uint256 amount1Needed) {
+        (uint160 sqrtPriceX96, , , , , , ) = IPancakeSwapPoolState(pool)
+            .slot0();
+
+        uint160 sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower);
+        uint160 sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(tickUpper);
+
+        uint256 half = amountIn / 2;
+
+        if (tokenInIsToken0) {
+            //
+            // First compute liquidity from token0 (half of input)
+            //
+            uint128 L0 = LiquidityAmounts.getLiquidityForAmount0(
+                sqrtPriceUpperX96,
+                sqrtPriceX96,
+                half
             );
+
+            // Compute corresponding token requirements at L0
+            (amount0Needed, amount1Needed) = LiquidityAmounts
+                .getAmountsForLiquidity(
+                    sqrtPriceX96,
+                    sqrtPriceLowerX96,
+                    sqrtPriceUpperX96,
+                    L0
+                );
+
+            //
+            // Compute liquidity from token1 using amount1Needed from above
+            //
+            uint128 L1 = LiquidityAmounts.getLiquidityForAmount1(
+                sqrtPriceLowerX96,
+                sqrtPriceX96,
+                amount1Needed
+            );
+
+            //
+            // Pick the minimum liquidity of the two
+            //
+            uint128 finalLiquidity = L0 > L1 ? L1 : L0;
+
+            //
+            // Compute the FINAL amounts needed for the min liquidity
+            //
+            (amount0Needed, amount1Needed) = LiquidityAmounts
+                .getAmountsForLiquidity(
+                    sqrtPriceX96,
+                    sqrtPriceLowerX96,
+                    sqrtPriceUpperX96,
+                    finalLiquidity
+                );
+        } else {
+            //
+            // First compute liquidity from token1 (half of input)
+            //
+            uint128 L1 = LiquidityAmounts.getLiquidityForAmount1(
+                sqrtPriceLowerX96,
+                sqrtPriceX96,
+                half
+            );
+
+            // Compute corresponding token requirements at L1
+            (amount0Needed, amount1Needed) = LiquidityAmounts
+                .getAmountsForLiquidity(
+                    sqrtPriceX96,
+                    sqrtPriceLowerX96,
+                    sqrtPriceUpperX96,
+                    L1
+                );
+
+            //
+            // Now compute liquidity from token0 using amount0Needed
+            //
+            uint128 L0 = LiquidityAmounts.getLiquidityForAmount0(
+                sqrtPriceLowerX96,
+                sqrtPriceX96,
+                amount0Needed
+            );
+
+            //
+            // Pick the *larger* liquidity (token0 side is limiting here)
+            //
+            uint128 finalLiquidity = L0 < L1 ? L1 : L0;
+
+            //
+            // Compute the FINAL required amounts
+            //
+            (amount0Needed, amount1Needed) = LiquidityAmounts
+                .getAmountsForLiquidity(
+                    sqrtPriceX96,
+                    sqrtPriceLowerX96,
+                    sqrtPriceUpperX96,
+                    finalLiquidity
+                );
         }
     }
 

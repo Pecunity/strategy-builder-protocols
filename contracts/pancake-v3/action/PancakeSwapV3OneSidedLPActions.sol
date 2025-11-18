@@ -146,40 +146,40 @@ contract PancakeSwapV3OneSidedLPActions is
         executions = addLiquidityOneSided(amountIn, oneSidedParams);
     }
 
-    function getPercentageTickRangeFromTick(
-        int24 currentTick,
-        uint24 percentageBps,
-        int24 tickSpacing
-    ) public pure returns (int24 tickLower, int24 tickUpper) {
-        require(percentageBps > 0, "Percentage must be > 0");
+    // function getPercentageTickRangeFromTick(
+    //     int24 currentTick,
+    //     uint24 percentageBps,
+    //     int24 tickSpacing
+    // ) public pure returns (int24 tickLower, int24 tickUpper) {
+    //     require(percentageBps > 0, "Percentage must be > 0");
 
-        // Prozent in 18 Dezimalen
-        uint256 p = uint256(percentageBps) * 1e14; // 1250 BPS -> 0.125 * 1e18
+    //     // Prozent in 18 Dezimalen
+    //     uint256 p = uint256(percentageBps) * 1e14; // 1250 BPS -> 0.125 * 1e18
 
-        // ln(1 + p) hochpräzise: hier nutzen wir ln(1+x) ≈ x - x^2/2 + x^3/3
-        uint256 p2 = (p * p) / 1e18;
-        uint256 p3 = (p2 * p) / 1e18;
-        uint256 ln1p = p - p2 / 2 + p3 / 3; // in 1e18 Skala
+    //     // ln(1 + p) hochpräzise: hier nutzen wir ln(1+x) ≈ x - x^2/2 + x^3/3
+    //     uint256 p2 = (p * p) / 1e18;
+    //     uint256 p3 = (p2 * p) / 1e18;
+    //     uint256 ln1p = p - p2 / 2 + p3 / 3; // in 1e18 Skala
 
-        // ln(1.0001) in 1e18 Skala
-        uint256 lnBase = 99995000000000000; // 0.000099995 * 1e18
+    //     // ln(1.0001) in 1e18 Skala
+    //     uint256 lnBase = 99995000000000000; // 0.000099995 * 1e18
 
-        // TickDelta berechnen
-        int24 tickDelta = int24(int256((ln1p * 1e18) / lnBase / 1e18));
+    //     // TickDelta berechnen
+    //     int24 tickDelta = int24(int256((ln1p * 1e18) / lnBase / 1e18));
 
-        tickLower = currentTick - tickDelta;
-        tickUpper = currentTick + tickDelta;
+    //     tickLower = currentTick - tickDelta;
+    //     tickUpper = currentTick + tickDelta;
 
-        // TickSpacing anwenden
-        tickLower = (tickLower / tickSpacing) * tickSpacing;
-        tickUpper = ((tickUpper + tickSpacing - 1) / tickSpacing) * tickSpacing;
+    //     // TickSpacing anwenden
+    //     tickLower = (tickLower / tickSpacing) * tickSpacing;
+    //     tickUpper = ((tickUpper + tickSpacing - 1) / tickSpacing) * tickSpacing;
 
-        // Clamp
-        if (tickLower < TickMath.MIN_TICK) tickLower = TickMath.MIN_TICK;
-        if (tickUpper > TickMath.MAX_TICK) tickUpper = TickMath.MAX_TICK;
+    //     // Clamp
+    //     if (tickLower < TickMath.MIN_TICK) tickLower = TickMath.MIN_TICK;
+    //     if (tickUpper > TickMath.MAX_TICK) tickUpper = TickMath.MAX_TICK;
 
-        require(tickLower < tickUpper, "Invalid tick range");
-    }
+    //     require(tickLower < tickUpper, "Invalid tick range");
+    // }
 
     function getTickRangeFromSqrtPrice(
         uint160 sqrtPriceX96,
@@ -216,26 +216,26 @@ contract PancakeSwapV3OneSidedLPActions is
         require(tickLower < tickUpper, "Invalid tick range");
     }
 
-    function getPercentageTickRangeApprox(
-        int24 currentTick,
-        uint24 percentageBps,
-        int24 spacing
-    ) public pure returns (int24 tickLower, int24 tickUpper) {
-        require(percentageBps > 0, "Percentage must be > 0");
+    // function getPercentageTickRangeApprox(
+    //     int24 currentTick,
+    //     uint24 percentageBps,
+    //     int24 spacing
+    // ) public pure returns (int24 tickLower, int24 tickUpper) {
+    //     require(percentageBps > 0, "Percentage must be > 0");
 
-        // Tick-Delta: percentage / 0.01% ~ percentageBps / 1 (approx)
-        // 1 tick ≈ 0.01% price change
-        int24 tickDelta = int24((int256(int24(percentageBps)) * 1e2) / 100); // Test empirisch
+    //     // Tick-Delta: percentage / 0.01% ~ percentageBps / 1 (approx)
+    //     // 1 tick ≈ 0.01% price change
+    //     int24 tickDelta = int24((int256(int24(percentageBps)) * 1e2) / 100); // Test empirisch
 
-        tickLower = currentTick - tickDelta;
-        tickUpper = currentTick + tickDelta;
+    //     tickLower = currentTick - tickDelta;
+    //     tickUpper = currentTick + tickDelta;
 
-        // TickSpacing anwenden
-        tickLower = (tickLower / spacing) * spacing;
-        tickUpper = (tickUpper / spacing) * spacing;
+    //     // TickSpacing anwenden
+    //     tickLower = (tickLower / spacing) * spacing;
+    //     tickUpper = (tickUpper / spacing) * spacing;
 
-        require(tickLower < tickUpper, "Invalid tick range");
-    }
+    //     require(tickLower < tickUpper, "Invalid tick range");
+    // }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃   Interface Identifier    ┃

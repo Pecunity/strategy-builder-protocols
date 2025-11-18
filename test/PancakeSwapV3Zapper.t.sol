@@ -351,6 +351,20 @@ contract PancakeSwapV3ZapperTest is Test {
             });
         IERC20(tokenIn).approve(address(zapper), TOKEN_IN_AMOUNT);
         zapper.zapInWithTickRange(params);
+
+        uint256 token0BalanceAfter = IERC20(TOKEN0).balanceOf(user);
+        uint256 token1BalanceAfter = IERC20(TOKEN1).balanceOf(user);
+        console.log("token user token0", token0BalanceAfter);
+        console.log("token user token1", token1BalanceAfter);
+
+        uint256 token0BalanceAfterZapper = IERC20(TOKEN0).balanceOf(
+            address(zapper)
+        );
+        uint256 token1BalanceAfterZapper = IERC20(TOKEN1).balanceOf(
+            address(zapper)
+        );
+        console.log("token zapper token0", token0BalanceAfterZapper);
+        console.log("token zapper token1", token1BalanceAfterZapper);
     }
 
     function test_zapInWithZapper() public {
