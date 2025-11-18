@@ -34,9 +34,10 @@ contract PancakeSwapV3SwapActions is IAction {
         uint256 amountOutMinimum,
         address tokenIn,
         address tokenOut,
-        uint24 fee
+        uint24 fee,
+        bool native
     ) public view returns (PluginExecution[] memory) {
-        if (tokenIn == WETH) {
+        if (native) {
             PluginExecution[] memory executions = new PluginExecution[](1);
 
             executions[0] = _swapExactInputSingle(
@@ -45,7 +46,8 @@ contract PancakeSwapV3SwapActions is IAction {
                 amountOutMinimum,
                 WETH,
                 tokenOut,
-                fee
+                fee,
+                native
             );
             return executions;
         } else {
@@ -57,7 +59,8 @@ contract PancakeSwapV3SwapActions is IAction {
                 amountOutMinimum,
                 tokenIn,
                 tokenOut,
-                fee
+                fee,
+                native
             );
             return executions;
         }
@@ -67,11 +70,12 @@ contract PancakeSwapV3SwapActions is IAction {
         address wallet,
         uint256 amountIn,
         uint256 amountOutMin,
-        bytes calldata path
+        bytes calldata path,
+        bool native
     ) public view returns (PluginExecution[] memory) {
         address token0 = _getTokenIn(path);
 
-        if (token0 == WETH) {
+        if (native) {
             PluginExecution[] memory executions = new PluginExecution[](1);
             executions[0] = _swapExactInput(
                 wallet,
@@ -104,23 +108,33 @@ contract PancakeSwapV3SwapActions is IAction {
         uint256 percentage,
         address tokenIn,
         address tokenOut,
-        uint24 fee
+        uint24 fee,
+        bool native
     ) external view returns (PluginExecution[] memory) {
         uint256 balance = IERC20(tokenIn).balanceOf(wallet);
         uint256 amountIn = (balance * percentage) / PERCENTAGE_FACTOR;
 
         return
-            swapExactInputSingle(wallet, amountIn, 0, tokenIn, tokenOut, fee);
+            swapExactInputSingle(
+                wallet,
+                amountIn,
+                0,
+                tokenIn,
+                tokenOut,
+                fee,
+                native
+            );
     }
 
     function swapInputPercentage(
         address wallet,
         uint256 percentage,
-        bytes calldata path
+        bytes calldata path,
+        bool native
     ) external view returns (PluginExecution[] memory) {
         uint256 balance = IERC20(_getTokenIn(path)).balanceOf(wallet);
         uint256 amountIn = (balance * percentage) / PERCENTAGE_FACTOR;
-        return swapExactInput(wallet, amountIn, 0, path);
+        return swapExactInput(wallet, amountIn, 0, path, native);
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -176,7 +190,8 @@ contract PancakeSwapV3SwapActions is IAction {
         uint256 amountOutMinimum,
         address tokenIn,
         address tokenOut,
-        uint24 fee
+        uint24 fee,
+        bool native
     ) internal view returns (PluginExecution memory) {
         ISwapRouterV3.ExactInputSingleParams memory params = ISwapRouterV3
             .ExactInputSingleParams({
@@ -193,7 +208,7 @@ contract PancakeSwapV3SwapActions is IAction {
             PluginExecution({
                 target: router,
                 data: abi.encodeCall(ISwapRouterV3.exactInputSingle, (params)),
-                value: tokenIn == WETH ? amountIn : 0
+                value: native ? amountIn : 0
             });
     }
 
