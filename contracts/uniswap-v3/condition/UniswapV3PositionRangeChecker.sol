@@ -104,7 +104,7 @@ contract UniswapV3PositionRangeChecker is BaseCondition {
         if (condition.contextId == bytes32(0)) return 0;
 
         bytes memory positionIdBytes = strategyBuilder.getContextVariable(
-            msg.sender,
+            wallet,
             condition.contextId,
             condition.contextKey
         );

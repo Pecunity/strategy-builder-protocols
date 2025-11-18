@@ -33,6 +33,7 @@ contract PancakeSwapV3PositionRangeChecker is BaseCondition {
         bytes32 contextId;
         bytes32 contextKey;
         PositionRangeStatusCheck rangeCheck;
+        bool updateable;
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -97,6 +98,10 @@ contract PancakeSwapV3PositionRangeChecker is BaseCondition {
         delete conditions[msg.sender][_id];
     }
 
+    function updateCondition(uint32 _id) public view override returns (bool) {
+        return conditions[msg.sender][_id].updateable;
+    }
+
     function checkCondition(
         address wallet,
         uint32 id
@@ -105,7 +110,7 @@ contract PancakeSwapV3PositionRangeChecker is BaseCondition {
         if (condition.contextId == bytes32(0)) return 0;
 
         bytes memory positionIdBytes = strategyBuilder.getContextVariable(
-            msg.sender,
+            wallet,
             condition.contextId,
             condition.contextKey
         );
@@ -199,6 +204,13 @@ contract PancakeSwapV3PositionRangeChecker is BaseCondition {
         address factory = positionManager.factory();
 
         pool = IUniswapV3Factory(factory).getPool(token0, token1, poolFee);
+    }
+
+    function isUpdateable(
+        address wallet,
+        uint32 id
+    ) public view override returns (bool) {
+        return conditions[wallet][id].updateable;
     }
 
     function walletCondition(

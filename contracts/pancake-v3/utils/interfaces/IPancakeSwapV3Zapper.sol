@@ -30,5 +30,5 @@ interface IPancakeSwapV3Zapper {
         address token0,
         address token1,
         uint24 poolFee
-    ) external view returns (address pool);
+    ) external view returns (address);
 }
