@@ -11,7 +11,7 @@
     "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
   },
   "UniswapV3ConditionsModule": {
-    "strategyBuilder": "0x4095B6aC5abbDEFFb690447dF6F487E8a2B387DF",
+    "strategyBuilder": "0x8286fd90531b7c27aA29B972ED7326E78CFDF697",
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   },
   "PancakeSwapV3ActionsModule": {
@@ -21,7 +21,7 @@
     "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
   },
   "PancakeSwapV3ConditionsModule": {
-    "strategyBuilder": "0x4095B6aC5abbDEFFb690447dF6F487E8a2B387DF",
+    "strategyBuilder": "0x8286fd90531b7c27aA29B972ED7326E78CFDF697",
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   }
 }

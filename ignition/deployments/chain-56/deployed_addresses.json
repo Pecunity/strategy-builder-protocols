@@ -1,8 +1,8 @@
 {
   "AAVEV3ActionsModule#AaveV3Actions": "0x8C262ec2db34a6CdA55ba9aDe792225191e0754C",
-  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x0134eE892d3B079ac1078660A7F11352CD70Fb49",
   "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0xfA3b3c765090C7b009470aC24F42a739132C3D5a",
   "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0xDe291067c3286A678475521ef85b1c3AB6C39b93",
   "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x42965f89d0425558FD52730715345abE4c6302d5",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x6B08e4Ae6B243447a04BA3baEEde1ceD761BF178"
+  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x6B08e4Ae6B243447a04BA3baEEde1ceD761BF178",
+  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x8dC79c7C4d992D53Ea19946260671ac919A7862A"
 }
