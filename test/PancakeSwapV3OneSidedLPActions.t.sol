@@ -9,6 +9,7 @@ import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import {IPancakeSwapV3OneSidedLPActions} from "../contracts/pancake-v3/action/interfaces/IPancakeSwapV3OneSidedLPActions.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract PancakeSwapV3OneSidedLPActionsTest is Test {
     error ExecutionFailed(
@@ -59,7 +60,11 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
         // Deploy zapper
         zapper = new PancakeSwapV3Zapper(SWAP_ROUTER, POSITION_MANAGER);
 
-        action = new PancakeSwapV3OneSidedLPActions(address(zapper));
+        action = new PancakeSwapV3OneSidedLPActions(
+            address(zapper),
+            POSITION_MANAGER,
+            SWAP_ROUTER
+        );
 
         // Fund user with test tokens
         // _fundUser();
@@ -92,6 +97,81 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
         // Verify range
         int24 range = tickUpper - tickLower;
         assertEq(range, 2513, "Range should be symmetric around currentTick");
+    }
+
+    function test_increaseLiquidity_Success() public {
+        uint24 percentage = 1250; // 5% range (±2.5%)
+        uint256 amountIn = 1e18;
+
+        deal(TOKEN0, WALLET, amountIn);
+
+        // Prepare params (assuming AddLiquidityOneSidedRangeParams struct)
+        IPancakeSwapV3OneSidedLPActions.AddLiquidityOneSidedRangeParams
+            memory params = IPancakeSwapV3OneSidedLPActions
+                .AddLiquidityOneSidedRangeParams({
+                    token0: TOKEN0,
+                    token1: TOKEN1,
+                    tokenIn: TOKEN0, // One-sided with token0
+                    fee: FEE,
+                    recipient: WALLET
+                });
+
+        // Call the function
+        vm.prank(WALLET);
+        IPancakeSwapV3OneSidedLPActions.PluginExecution[]
+            memory executions = action.addLiquidityOneSidedPercentageRange(
+                percentage,
+                amountIn,
+                params
+            );
+
+        bytes memory result = execute(executions, 1);
+
+        uint256 tokenId = abi.decode(result, (uint256));
+
+        (
+            ,
+            ,
+            address _token0,
+            address _token1,
+            ,
+            int24 currTickLower,
+            int24 currTickUpper,
+            uint128 liquidity,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(POSITION_MANAGER).positions(tokenId);
+
+        uint256 balanceToken0 = IERC20(TOKEN0).balanceOf(WALLET);
+        uint256 balanceToken1 = IERC20(TOKEN1).balanceOf(WALLET);
+
+        console.log("=== LP Position State ===");
+        console.log("Current Tick Lower:", int(currTickLower));
+        console.log("Current Tick Upper:", int(currTickUpper));
+        console.log("Current Liquidity:", uint(liquidity));
+        console.log("Balance Token 0:", balanceToken0);
+        console.log("Balance Token 1:", balanceToken1);
+
+        uint256 increaseAmount = 100000e18;
+
+        deal(TOKEN0, WALLET, increaseAmount);
+        vm.prank(WALLET);
+        IPancakeSwapV3OneSidedLPActions.PluginExecution[]
+            memory executions2 = action.addLiquidityOneSidedToExistingPosition(
+                increaseAmount,
+                tokenId,
+                TOKEN0
+            );
+
+        bytes memory result2 = execute(executions2, 1);
+
+        uint256 balanceToken0After = IERC20(TOKEN0).balanceOf(WALLET);
+        uint256 balanceToken1After = IERC20(TOKEN1).balanceOf(WALLET);
+
+        console.log("Balance After Increase Token 0:", balanceToken0After);
+        console.log("Balance After Increase Token 1:", balanceToken1After);
     }
 
     function testAddLiquidityOneSidedPercentageRange_5Percent() public {
@@ -172,6 +252,12 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
         console.log("Current Tick Lower:", int(currTickLower));
         console.log("Current Tick Upper:", int(currTickUpper));
         console.log("Current Liquidity:", uint(liquidity));
+
+        uint256 balanceToken0 = IERC20(TOKEN0).balanceOf(WALLET);
+        uint256 balanceToken1 = IERC20(TOKEN1).balanceOf(WALLET);
+
+        console.log("Balance Token 0:", balanceToken0);
+        console.log("Balance Token 1:", balanceToken1);
     }
 
     function execute(

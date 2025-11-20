@@ -31,4 +31,12 @@ interface IPancakeSwapV3Zapper {
         address token1,
         uint24 poolFee
     ) external view returns (address);
+
+    function computeRequiredAmounts(
+        bool tokenInIsToken0,
+        uint256 amountIn,
+        address pool,
+        int24 tickLower,
+        int24 tickUpper
+    ) external view returns (uint256 amount0Needed, uint256 amount1Needed);
 }

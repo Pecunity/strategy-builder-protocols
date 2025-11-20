@@ -56,6 +56,12 @@ interface IPancakeSwapV3OneSidedLPActions is IAction {
         AddLiquidityOneSidedRangeParams calldata params
     ) external view returns (PluginExecution[] memory executions);
 
+    function addLiquidityOneSidedToExistingPosition(
+        uint256 amountIn,
+        uint256 positionId,
+        address tokenIn
+    ) external view returns (PluginExecution[] memory);
+
     /// @notice Identifier for the action
     /// @return bytes4 action identifier
     function identifier() external pure returns (bytes4);

@@ -10,6 +10,8 @@ import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {IAction} from "pecunity-strategy-builder/contracts/interfaces/IAction.sol";
 import {ITokenGetter} from "pecunity-strategy-builder/contracts/interfaces/ITokenGetter.sol";
 import {IPancakeSwapV3OneSidedLPActions} from "./interfaces/IPancakeSwapV3OneSidedLPActions.sol";
+import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
+import {ISwapRouterV3} from "../external/ISwapRouterV3.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @title PancakeSwapV3OneSidedLPActions
@@ -25,12 +27,20 @@ contract PancakeSwapV3OneSidedLPActions is
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
     IPancakeSwapV3Zapper public immutable zapper;
+    address public immutable positionManager;
+    address public immutable swapRouter;
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       Constructor         ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    constructor(address _zapper) {
+    constructor(
+        address _zapper,
+        address _positionManager,
+        address _swapRouter
+    ) {
         zapper = IPancakeSwapV3Zapper(_zapper);
+        positionManager = _positionManager;
+        swapRouter = _swapRouter;
     }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -146,40 +156,76 @@ contract PancakeSwapV3OneSidedLPActions is
         executions = addLiquidityOneSided(amountIn, oneSidedParams);
     }
 
-    // function getPercentageTickRangeFromTick(
-    //     int24 currentTick,
-    //     uint24 percentageBps,
-    //     int24 tickSpacing
-    // ) public pure returns (int24 tickLower, int24 tickUpper) {
-    //     require(percentageBps > 0, "Percentage must be > 0");
+    function addLiquidityOneSidedToExistingPosition(
+        uint256 amountIn,
+        uint256 positionId,
+        address tokenIn
+    ) public view returns (PluginExecution[] memory) {
+        require(amountIn > 0, "Invalid amount");
 
-    //     // Prozent in 18 Dezimalen
-    //     uint256 p = uint256(percentageBps) * 1e14; // 1250 BPS -> 0.125 * 1e18
+        (
+            ,
+            ,
+            address token0,
+            address token1,
+            uint24 fee,
+            int24 tickLower,
+            int24 tickUpper,
+            ,
+            ,
+            ,
+            ,
 
-    //     // ln(1 + p) hochpräzise: hier nutzen wir ln(1+x) ≈ x - x^2/2 + x^3/3
-    //     uint256 p2 = (p * p) / 1e18;
-    //     uint256 p3 = (p2 * p) / 1e18;
-    //     uint256 ln1p = p - p2 / 2 + p3 / 3; // in 1e18 Skala
+        ) = INonfungiblePositionManager(positionManager).positions(positionId);
 
-    //     // ln(1.0001) in 1e18 Skala
-    //     uint256 lnBase = 99995000000000000; // 0.000099995 * 1e18
+        require(tokenIn == token0 || tokenIn == token1, "Invalid tokenIn");
 
-    //     // TickDelta berechnen
-    //     int24 tickDelta = int24(int256((ln1p * 1e18) / lnBase / 1e18));
+        address pool = zapper.getPoolAddress(token0, token1, fee);
 
-    //     tickLower = currentTick - tickDelta;
-    //     tickUpper = currentTick + tickDelta;
+        (uint256 amount0Needed, uint256 amount1Needed) = zapper
+            .computeRequiredAmounts(
+                token0 == tokenIn,
+                amountIn,
+                pool,
+                tickLower,
+                tickUpper
+            );
 
-    //     // TickSpacing anwenden
-    //     tickLower = (tickLower / tickSpacing) * tickSpacing;
-    //     tickUpper = ((tickUpper + tickSpacing - 1) / tickSpacing) * tickSpacing;
+        PluginExecution[] memory executions = new PluginExecution[](5);
 
-    //     // Clamp
-    //     if (tickLower < TickMath.MIN_TICK) tickLower = TickMath.MIN_TICK;
-    //     if (tickUpper > TickMath.MAX_TICK) tickUpper = TickMath.MAX_TICK;
+        executions[0] = _approveToken(type(uint256).max, tokenIn, swapRouter);
 
-    //     require(tickLower < tickUpper, "Invalid tick range");
-    // }
+        // 1 Swap token with exact output
+        executions[1] = _swapForNeededAmount(
+            tokenIn,
+            token0,
+            token1,
+            token0 == tokenIn,
+            amount0Needed,
+            amount1Needed,
+            fee
+        );
+
+        executions[2] = _approveToken(
+            type(uint256).max,
+            token0,
+            positionManager
+        );
+        executions[3] = _approveToken(
+            type(uint256).max,
+            token1,
+            positionManager
+        );
+
+        executions[4] = _increaseLiquidity(
+            positionId,
+            amount0Needed,
+            amount1Needed,
+            token0 == tokenIn
+        );
+
+        return executions;
+    }
 
     function getTickRangeFromSqrtPrice(
         uint160 sqrtPriceX96,
@@ -216,26 +262,87 @@ contract PancakeSwapV3OneSidedLPActions is
         require(tickLower < tickUpper, "Invalid tick range");
     }
 
-    // function getPercentageTickRangeApprox(
-    //     int24 currentTick,
-    //     uint24 percentageBps,
-    //     int24 spacing
-    // ) public pure returns (int24 tickLower, int24 tickUpper) {
-    //     require(percentageBps > 0, "Percentage must be > 0");
+    function _increaseLiquidity(
+        uint256 positionId,
+        uint256 amount0Needed,
+        uint256 amount1Needed,
+        bool tokenInIs0
+    ) internal view returns (PluginExecution memory) {
+        INonfungiblePositionManager.IncreaseLiquidityParams
+            memory params = INonfungiblePositionManager
+                .IncreaseLiquidityParams({
+                    tokenId: positionId,
+                    amount0Desired: amount0Needed,
+                    amount1Desired: amount1Needed,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp
+                });
 
-    //     // Tick-Delta: percentage / 0.01% ~ percentageBps / 1 (approx)
-    //     // 1 tick ≈ 0.01% price change
-    //     int24 tickDelta = int24((int256(int24(percentageBps)) * 1e2) / 100); // Test empirisch
+        return
+            PluginExecution({
+                target: positionManager,
+                data: abi.encodeCall(
+                    INonfungiblePositionManager.increaseLiquidity,
+                    (params)
+                ),
+                value: 0
+            });
+    }
 
-    //     tickLower = currentTick - tickDelta;
-    //     tickUpper = currentTick + tickDelta;
+    function _swapForNeededAmount(
+        address tokenIn,
+        address token0,
+        address token1,
+        bool tokenInIsToken0,
+        uint256 amount0Needed,
+        uint256 amount1Needed,
+        uint24 poolFee
+    ) internal view returns (PluginExecution memory) {
+        // Determine output token
+        address tokenOut = tokenInIsToken0 ? token1 : token0;
 
-    //     // TickSpacing anwenden
-    //     tickLower = (tickLower / spacing) * spacing;
-    //     tickUpper = (tickUpper / spacing) * spacing;
+        // Determine how much output is needed
+        uint256 amountOutNeeded = tokenInIsToken0
+            ? amount1Needed
+            : amount0Needed;
 
-    //     require(tickLower < tickUpper, "Invalid tick range");
-    // }
+        // Build swap parameters
+        ISwapRouterV3.ExactOutputSingleParams memory swapParams = ISwapRouterV3
+            .ExactOutputSingleParams({
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                fee: poolFee,
+                recipient: msg.sender,
+                amountOut: amountOutNeeded,
+                amountInMaximum: type(uint256).max,
+                sqrtPriceLimitX96: 0
+            });
+
+        // Execute swap
+        return
+            PluginExecution({
+                target: swapRouter,
+                data: abi.encodeCall(
+                    ISwapRouterV3.exactOutputSingle,
+                    (swapParams)
+                ),
+                value: 0
+            });
+    }
+
+    function _approveToken(
+        uint256 amount,
+        address token,
+        address spender
+    ) internal pure returns (PluginExecution memory) {
+        return
+            PluginExecution({
+                target: token,
+                data: abi.encodeCall(IERC20.approve, (spender, amount)),
+                value: 0
+            });
+    }
 
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃   Interface Identifier    ┃
