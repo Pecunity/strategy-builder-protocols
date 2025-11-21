@@ -26,7 +26,7 @@ export const PancakeSwapV3ActionsModule = buildModule(
 
     const pancakeSwapV3OneSidedLPActions = m.contract(
       "PancakeSwapV3OneSidedLPActions",
-      [zapper]
+      [zapper, positionManager, swapRouter]
     );
 
     return {

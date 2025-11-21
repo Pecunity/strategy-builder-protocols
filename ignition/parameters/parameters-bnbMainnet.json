@@ -4,16 +4,6 @@
     "oracle": "0x39bc1bfDa2130d6Bb6DBEfd366939b4c7aa7C697",
     "pool": "0x6807dc923806fE8Fd134338EABCA509979a7e0cB"
   },
-  "UniswapV3ActionsModule": {
-    "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
-    "factory": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
-    "swapRouter": "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
-    "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
-  },
-  "UniswapV3ConditionsModule": {
-    "strategyBuilder": "0xdD51892fF209fa146e60d2f9F9c2bCBb9bb193e2",
-    "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
-  },
   "PancakeSwapV3ActionsModule": {
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
     "factory": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
@@ -21,7 +11,7 @@
     "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
   },
   "PancakeSwapV3ConditionsModule": {
-    "strategyBuilder": "0xdD51892fF209fa146e60d2f9F9c2bCBb9bb193e2",
+    "strategyBuilder": "0xE5C97A92cD1514c273F3292084f9a8Bc79f43E44",
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   }
 }

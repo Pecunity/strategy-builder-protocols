@@ -220,8 +220,7 @@ contract PancakeSwapV3OneSidedLPActions is
         executions[4] = _increaseLiquidity(
             positionId,
             amount0Needed,
-            amount1Needed,
-            token0 == tokenIn
+            amount1Needed
         );
 
         return executions;
@@ -265,8 +264,7 @@ contract PancakeSwapV3OneSidedLPActions is
     function _increaseLiquidity(
         uint256 positionId,
         uint256 amount0Needed,
-        uint256 amount1Needed,
-        bool tokenInIs0
+        uint256 amount1Needed
     ) internal view returns (PluginExecution memory) {
         INonfungiblePositionManager.IncreaseLiquidityParams
             memory params = INonfungiblePositionManager
