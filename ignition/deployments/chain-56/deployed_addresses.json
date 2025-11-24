@@ -4,7 +4,7 @@
   "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0x51ba132B96607A4BfdCd212772aC2Ab3f5E1D851",
   "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0xbC7Ed7324D8B9a400Cf8045A6eEFED9D56B5a84E",
   "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x76F20A078392bF5A8e68d4d3b6Dcede4C554c9B0",
-  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x8e61B06eDEF8557CD1e4F530d96B22736Fcb34e0",
   "AAVEV3ConditionsModule#AaveV3PositionBalance": "0xfA6b2292f9b724FbE6d8dDa8F81ded50C458Fa22",
-  "AAVEV3ConditionsModule#HealthFactorCondition": "0xAFE192c2A7A98950BF9eB7F45A1ac263fA8b0B50"
+  "AAVEV3ConditionsModule#HealthFactorCondition": "0xAFE192c2A7A98950BF9eB7F45A1ac263fA8b0B50",
+  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0xe16875df74A38dB4d2A329589d18B7ccF0336F34"
 }
