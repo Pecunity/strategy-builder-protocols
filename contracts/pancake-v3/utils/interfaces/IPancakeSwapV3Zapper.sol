@@ -26,6 +26,13 @@ interface IPancakeSwapV3Zapper {
         ZapinParameter calldata params
     ) external returns (uint256 tokenId);
 
+    function zapInToExistingPosition(
+        uint256 amountIn,
+        uint256 positionId,
+        address tokenIn,
+        address wallet
+    ) external;
+
     function getPoolAddress(
         address token0,
         address token1,

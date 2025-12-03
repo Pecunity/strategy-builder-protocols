@@ -159,69 +159,26 @@ contract PancakeSwapV3OneSidedLPActions is
     function addLiquidityOneSidedToExistingPosition(
         uint256 amountIn,
         uint256 positionId,
-        address tokenIn
+        address tokenIn,
+        address wallet
     ) public view returns (PluginExecution[] memory) {
-        require(amountIn > 0, "Invalid amount");
-
-        (
-            ,
-            ,
-            address token0,
-            address token1,
-            uint24 fee,
-            int24 tickLower,
-            int24 tickUpper,
-            ,
-            ,
-            ,
-            ,
-
-        ) = INonfungiblePositionManager(positionManager).positions(positionId);
-
-        require(tokenIn == token0 || tokenIn == token1, "Invalid tokenIn");
-
-        address pool = zapper.getPoolAddress(token0, token1, fee);
-
-        (uint256 amount0Needed, uint256 amount1Needed) = zapper
-            .computeRequiredAmounts(
-                token0 == tokenIn,
-                amountIn,
-                pool,
-                tickLower,
-                tickUpper
-            );
-
         PluginExecution[] memory executions = new PluginExecution[](5);
 
         executions[0] = _approveToken(type(uint256).max, tokenIn, swapRouter);
 
-        // 1 Swap token with exact output
-        executions[1] = _swapForNeededAmount(
-            tokenIn,
-            token0,
-            token1,
-            token0 == tokenIn,
-            amount0Needed,
-            amount1Needed,
-            fee
-        );
-
-        executions[2] = _approveToken(
-            type(uint256).max,
-            token0,
-            positionManager
-        );
-        executions[3] = _approveToken(
-            type(uint256).max,
-            token1,
-            positionManager
-        );
-
-        executions[4] = _increaseLiquidity(
+        bytes memory zapData = abi.encodeWithSelector(
+            IPancakeSwapV3Zapper.zapInToExistingPosition.selector,
+            amountIn,
             positionId,
-            amount0Needed,
-            amount1Needed
+            tokenIn,
+            wallet
         );
+
+        executions[1] = PluginExecution({
+            target: address(zapper),
+            data: zapData,
+            value: 0
+        });
 
         return executions;
     }
@@ -259,74 +216,6 @@ contract PancakeSwapV3OneSidedLPActions is
         tickUpper = ((tickUpper + spacing - 1) / spacing) * spacing;
 
         require(tickLower < tickUpper, "Invalid tick range");
-    }
-
-    function _increaseLiquidity(
-        uint256 positionId,
-        uint256 amount0Needed,
-        uint256 amount1Needed
-    ) internal view returns (PluginExecution memory) {
-        INonfungiblePositionManager.IncreaseLiquidityParams
-            memory params = INonfungiblePositionManager
-                .IncreaseLiquidityParams({
-                    tokenId: positionId,
-                    amount0Desired: amount0Needed,
-                    amount1Desired: amount1Needed,
-                    amount0Min: 0,
-                    amount1Min: 0,
-                    deadline: block.timestamp
-                });
-
-        return
-            PluginExecution({
-                target: positionManager,
-                data: abi.encodeCall(
-                    INonfungiblePositionManager.increaseLiquidity,
-                    (params)
-                ),
-                value: 0
-            });
-    }
-
-    function _swapForNeededAmount(
-        address tokenIn,
-        address token0,
-        address token1,
-        bool tokenInIsToken0,
-        uint256 amount0Needed,
-        uint256 amount1Needed,
-        uint24 poolFee
-    ) internal view returns (PluginExecution memory) {
-        // Determine output token
-        address tokenOut = tokenInIsToken0 ? token1 : token0;
-
-        // Determine how much output is needed
-        uint256 amountOutNeeded = tokenInIsToken0
-            ? amount1Needed
-            : amount0Needed;
-
-        // Build swap parameters
-        ISwapRouterV3.ExactOutputSingleParams memory swapParams = ISwapRouterV3
-            .ExactOutputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
-                fee: poolFee,
-                recipient: msg.sender,
-                amountOut: amountOutNeeded,
-                amountInMaximum: type(uint256).max,
-                sqrtPriceLimitX96: 0
-            });
-
-        // Execute swap
-        return
-            PluginExecution({
-                target: swapRouter,
-                data: abi.encodeCall(
-                    ISwapRouterV3.exactOutputSingle,
-                    (swapParams)
-                ),
-                value: 0
-            });
     }
 
     function _approveToken(

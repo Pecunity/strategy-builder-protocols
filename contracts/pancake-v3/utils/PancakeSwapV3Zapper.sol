@@ -60,6 +60,65 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
         return _zapIn(params);
     }
 
+    function zapInToExistingPosition(
+        uint256 amountIn,
+        uint256 positionId,
+        address tokenIn,
+        address wallet
+    ) external {
+        require(amountIn > 0, "Invalid amount");
+
+        (
+            ,
+            ,
+            address token0,
+            address token1,
+            uint24 fee,
+            int24 tickLower,
+            int24 tickUpper,
+            ,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(positionManager).positions(positionId);
+
+        require(tokenIn == token0 || tokenIn == token1, "Invalid tokenIn");
+
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+
+        address pool = getPoolAddress(token0, token1, fee);
+
+        (uint256 amount0Needed, uint256 amount1Needed) = computeRequiredAmounts(
+            token0 == tokenIn,
+            amountIn,
+            pool,
+            tickLower,
+            tickUpper
+        );
+
+        IPancakeSwapV3Zapper.ZapinParameter memory params = IPancakeSwapV3Zapper
+            .ZapinParameter({
+                token0: token0,
+                token1: token1,
+                tokenIn: tokenIn,
+                amountIn: amountIn,
+                poolFee: fee,
+                tickLower: tickLower,
+                tickUpper: tickUpper,
+                recipient: wallet
+            });
+        bool tokenInIsToken0 = params.tokenIn == params.token0;
+        _swapForNeededAmount(
+            params,
+            tokenInIsToken0,
+            amount0Needed,
+            amount1Needed
+        );
+
+        _increaseLiquidityAndReturnDust(positionId, params);
+    }
+
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃    Internal functions     ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -109,6 +168,43 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
         );
 
         return _mintAndReturnDust(params);
+    }
+
+    function _increaseLiquidityAndReturnDust(
+        uint256 positionId,
+        IPancakeSwapV3Zapper.ZapinParameter memory params
+    ) internal {
+        // Fetch balances after swaps
+        uint256 token0Balance = IERC20(params.token0).balanceOf(address(this));
+        uint256 token1Balance = IERC20(params.token1).balanceOf(address(this));
+
+        // Approve position manager
+        IERC20(params.token0).approve(address(positionManager), token0Balance);
+        IERC20(params.token1).approve(address(positionManager), token1Balance);
+
+        INonfungiblePositionManager.IncreaseLiquidityParams
+            memory increaseLPParams = INonfungiblePositionManager
+                .IncreaseLiquidityParams({
+                    tokenId: positionId,
+                    amount0Desired: token0Balance,
+                    amount1Desired: token1Balance,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp
+                });
+
+        positionManager.increaseLiquidity(increaseLPParams);
+
+        // Send leftover dust back to user
+        uint256 token0After = IERC20(params.token0).balanceOf(address(this));
+        uint256 token1After = IERC20(params.token1).balanceOf(address(this));
+
+        if (token0After > 0) {
+            IERC20(params.token0).transfer(params.recipient, token0After);
+        }
+        if (token1After > 0) {
+            IERC20(params.token1).transfer(params.recipient, token1After);
+        }
     }
 
     function _mintAndReturnDust(
@@ -294,7 +390,7 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
         address token0,
         address token1,
         uint24 poolFee
-    ) external view returns (address) {
+    ) public view returns (address) {
         return
             IUniswapV3Factory(
                 INonfungiblePositionManager(positionManager).factory()

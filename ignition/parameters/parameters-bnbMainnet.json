@@ -11,7 +11,7 @@
     "WETH9": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
   },
   "PancakeSwapV3ConditionsModule": {
-    "strategyBuilder": "0x00FB707CCc491DB9b5bf556EeeD00CB83eD10E05",
+    "strategyBuilder": "0x1B78A26cA48168338d547030e3609109E7100b4B",
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   }
 }

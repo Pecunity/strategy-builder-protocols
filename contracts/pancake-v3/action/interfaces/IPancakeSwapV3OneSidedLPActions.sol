@@ -59,7 +59,8 @@ interface IPancakeSwapV3OneSidedLPActions is IAction {
     function addLiquidityOneSidedToExistingPosition(
         uint256 amountIn,
         uint256 positionId,
-        address tokenIn
+        address tokenIn,
+        address wallet
     ) external view returns (PluginExecution[] memory);
 
     /// @notice Identifier for the action
