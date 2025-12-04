@@ -10,6 +10,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import {IPancakeSwapV3OneSidedLPActions} from "../contracts/pancake-v3/action/interfaces/IPancakeSwapV3OneSidedLPActions.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract PancakeSwapV3OneSidedLPActionsTest is Test {
     error ExecutionFailed(
@@ -18,6 +19,8 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       Constants           ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+    //alt 0x0b88FB1e36adC8B52B69320b0b2a6A98869e7321
 
     string BNB_FORK = vm.envString("BNB_FORK");
     uint256 bnbFork;
@@ -75,21 +78,38 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
     }
 
     function test_getTickRangeFromPercentage_MainCase() public view {
-        int24 currentTick = -68311;
-        uint24 percentageBps = 1250; // 12.5%
+        int24 currentTick = -68145;
+        uint24 percentageBps = 2000; // 12.5%
         int24 tickSpacing = 1;
-        uint160 sqrtPriceX96 = 2603861350071361282275102118;
+        uint160 sqrtPriceX96 = 2625494196872383124378516933;
+
+        uint256 priceX96 = ((uint256(sqrtPriceX96) * 1e18) / 2 ** 96) ** 2; // price in 1e36 fixed-point
+
+        console.log(priceX96);
+        uint256 ONE = 1e18;
+        uint256 p = (uint256(percentageBps) * ONE) / 10000;
+
+        console.log(Math.sqrt(1e18 + p));
+
+        uint256 priceLower = (priceX96 * 1e9) / Math.sqrt(1e18 + p);
+        uint256 priceUpper = (priceX96 * Math.sqrt(1e18 + p)) / 1e9;
+
+        console.log("priceLower", priceLower);
+        console.log("priceUpper", priceUpper);
 
         (int24 tickLower, int24 tickUpper) = action.getTickRangeFromSqrtPrice(
             sqrtPriceX96,
             percentageBps,
             tickSpacing
         );
-
         // Expected values (calculated offline)
         // tickDelta ≈ 1178 for 12.5%
         // tickLower ≈ -68054 - 1178 = -69232
         // tickUpper ≈ -68054 + 1178 = -66876
+
+        console.log("tickLower", tickLower);
+        console.log("tickUpper", tickUpper);
+        console.log("currentTick", currentTick);
 
         assertEq(tickUpper, -67133, "tickUpper should be -67133");
         assertEq(tickLower, -69646, "tickLower should be -69646");
@@ -162,7 +182,8 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
             memory executions2 = action.addLiquidityOneSidedToExistingPosition(
                 increaseAmount,
                 tokenId,
-                TOKEN0
+                TOKEN0,
+                WALLET
             );
 
         bytes memory result2 = execute(executions2, 1);

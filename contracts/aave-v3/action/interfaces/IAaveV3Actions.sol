@@ -166,6 +166,17 @@ interface IAaveV3Actions is IAction {
         uint256 interestRateMode
     ) external view returns (PluginExecution[] memory, bytes memory);
 
+    function withdrawPercentageOfSupply(
+        address wallet,
+        address asset,
+        uint256 percentage
+    ) external view returns (PluginExecution[] memory, bytes memory);
+
+    function withdrawPercentageOfSupplyETH(
+        address wallet,
+        uint256 percentage
+    ) external view returns (PluginExecution[] memory, bytes memory);
+
     function calculateBorrowAmount(
         address wallet,
         address asset,

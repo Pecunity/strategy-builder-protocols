@@ -295,7 +295,7 @@ contract PancakeSwapV3Zapper is IPancakeSwapV3Zapper {
         uint160 sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower);
         uint160 sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(tickUpper);
 
-        uint256 half = (amountIn * 470) / 1000;
+        uint256 half = (amountIn * 495) / 1000;
 
         if (tokenInIsToken0) {
             //

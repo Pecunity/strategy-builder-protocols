@@ -71,7 +71,7 @@ contract UniswapV3OneSidedLPActionsTest is Test {
 
     function test_getTickRangeFromPercentage_MainCase() public view {
         int24 currentTick = -68311;
-        uint24 percentageBps = 1250; // 12.5%
+        uint24 percentageBps = 3000; // 12.5%
         int24 tickSpacing = 1;
         uint160 sqrtPriceX96 = 2603861350071361282275102118;
 
@@ -85,6 +85,10 @@ contract UniswapV3OneSidedLPActionsTest is Test {
         // tickDelta ≈ 1178 for 12.5%
         // tickLower ≈ -68054 - 1178 = -69232
         // tickUpper ≈ -68054 + 1178 = -66876
+
+        console.log("tickLower", tickLower);
+        console.log("tickUpper", tickUpper);
+        console.log("currentTick", currentTick);
 
         assertEq(tickLower, -69232, "tickLower should be -69232");
         assertEq(tickUpper, -66876, "tickUpper should be -66876");

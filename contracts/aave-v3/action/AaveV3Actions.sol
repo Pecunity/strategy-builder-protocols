@@ -70,11 +70,15 @@ contract AaveV3Actions is IAaveV3Actions {
         tokenGetterIDs[IAaveV3Actions.repayPercentageOfBalanceETH.selector] = 1;
         tokenGetterIDs[IAaveV3Actions.repayToHealthFactorETH.selector] = 1;
         tokenGetterIDs[IAaveV3Actions.borrowToHealthFactorETH.selector] = 1;
+        tokenGetterIDs[
+            IAaveV3Actions.withdrawPercentageOfSupplyETH.selector
+        ] = 1;
 
         tokenGetterIDs[IAaveV3Actions.supplyPercentageOfBalance.selector] = 2;
         tokenGetterIDs[IAaveV3Actions.changeSupplyToHealthFactor.selector] = 2;
         tokenGetterIDs[IAaveV3Actions.supply.selector] = 2;
         tokenGetterIDs[IAaveV3Actions.withdraw.selector] = 2;
+        tokenGetterIDs[IAaveV3Actions.withdrawPercentageOfSupply.selector] = 2;
 
         tokenGetterIDs[IAaveV3Actions.borrow.selector] = 3;
         tokenGetterIDs[IAaveV3Actions.repay.selector] = 3;
@@ -556,6 +560,33 @@ contract AaveV3Actions is IAaveV3Actions {
         return repayETH(wallet, repayAmount, interestRateMode);
     }
 
+    function withdrawPercentageOfSupply(
+        address wallet,
+        address asset,
+        uint256 percentage
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        uint256 withdrawAmount = _calculatePercentageAmountOfSupplt(
+            wallet,
+            asset,
+            percentage
+        );
+
+        return withdraw(wallet, asset, withdrawAmount);
+    }
+
+    function withdrawPercentageOfSupplyETH(
+        address wallet,
+        uint256 percentage
+    ) public view returns (PluginExecution[] memory, bytes memory) {
+        uint256 withdrawAmount = _calculatePercentageAmountOfSupplt(
+            wallet,
+            WETH,
+            percentage
+        );
+
+        return withdrawETH(wallet, withdrawAmount);
+    }
+
     function changeDebtToHealthFactor(
         address wallet,
         address asset,
@@ -789,6 +820,18 @@ contract AaveV3Actions is IAaveV3Actions {
         deltaCol = assetPrice > 0
             ? (deltaColInBaseCurrency * 10 ** decimals) / assetPrice
             : 0;
+    }
+
+    function _calculatePercentageAmountOfSupplt(
+        address wallet,
+        address asset,
+        uint256 percentage
+    ) internal view returns (uint256) {
+        uint256 supplyTokenBalance = IERC20(_getSupplyToken(asset)).balanceOf(
+            wallet
+        );
+
+        return (supplyTokenBalance * percentage) / PERCENTAGE_FACTOR;
     }
 
     function _calculatePercentageAmountOfAssetBalance(

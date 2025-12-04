@@ -164,7 +164,11 @@ contract PancakeSwapV3OneSidedLPActions is
     ) public view returns (PluginExecution[] memory) {
         PluginExecution[] memory executions = new PluginExecution[](5);
 
-        executions[0] = _approveToken(type(uint256).max, tokenIn, swapRouter);
+        executions[0] = _approveToken(
+            type(uint256).max,
+            tokenIn,
+            address(zapper)
+        );
 
         bytes memory zapData = abi.encodeWithSelector(
             IPancakeSwapV3Zapper.zapInToExistingPosition.selector,
@@ -192,30 +196,72 @@ contract PancakeSwapV3OneSidedLPActions is
         require(percentageBps > 0, "Percentage must be > 0");
 
         // 1e4 = 10000 BPS, convert BPS to scale
-        uint256 factorUp = 10000 + uint256(percentageBps);
-        uint256 factorDown = 10000 - uint256(percentageBps);
+        // uint256 factorUp = 10000 + uint256(percentageBps);
+        // uint256 factorDown = 10000 - uint256(percentageBps);
 
-        // sqrt(1 + p) in 1e18 scale
-        uint256 sqrtUp = Math.sqrt(factorUp * 1e14); // sqrt(1 + 0.125) * 1e9
-        uint256 sqrtDown = Math.sqrt(factorDown * 1e14); // sqrt(1 - 0.125) * 1e9
+        // // sqrt(1 + p) in 1e18 scale
+        // uint256 sqrtUp = Math.sqrt(factorUp * 1e14); // sqrt(1 + 0.125) * 1e9
+        // uint256 sqrtDown = Math.sqrt(factorDown * 1e14); // sqrt(1 - 0.125) * 1e9
 
-        // Multiply sqrtPriceX96 by scaling factor
-        uint160 sqrtPriceUpperX96 = uint160(
-            (uint256(sqrtPriceX96) * sqrtUp) / 1e9
-        );
-        uint160 sqrtPriceLowerX96 = uint160(
-            (uint256(sqrtPriceX96) * sqrtDown) / 1e9
-        );
+        // // Multiply sqrtPriceX96 by scaling factor
+        // uint160 sqrtPriceUpperX96 = uint160(
+        //     (uint256(sqrtPriceX96) * sqrtUp) / 1e9
+        // );
+        // uint160 sqrtPriceLowerX96 = uint160(
+        //     (uint256(sqrtPriceX96) * sqrtDown) / 1e9
+        // );
 
-        // Get ticks from sqrt ratios
-        tickUpper = TickMath.getTickAtSqrtRatio(sqrtPriceUpperX96);
-        tickLower = TickMath.getTickAtSqrtRatio(sqrtPriceLowerX96);
+        // // Get ticks from sqrt ratios
+        // tickUpper = TickMath.getTickAtSqrtRatio(sqrtPriceUpperX96);
+        // tickLower = TickMath.getTickAtSqrtRatio(sqrtPriceLowerX96);
 
-        // Apply tick spacing
-        tickLower = (tickLower / spacing) * spacing;
-        tickUpper = ((tickUpper + spacing - 1) / spacing) * spacing;
+        // // Apply tick spacing
+        // tickLower = (tickLower / spacing) * spacing;
+        // tickUpper = ((tickUpper + spacing - 1) / spacing) * spacing;
 
-        require(tickLower < tickUpper, "Invalid tick range");
+        // require(tickLower < tickUpper, "Invalid tick range");
+
+        uint256 ONE = 1e18;
+
+        // Convert BPS to 1e18 fixed-point
+        uint256 p = (uint256(percentageBps) * ONE) / 10000;
+
+        // sqrt multipliers
+        // uint256 sqrtUp = Math.sqrt(ONE + p); // sqrt(1 + p)
+        // uint256 sqrtDown = Math.sqrt(ONE - p); // sqrt(1 - p)
+
+        // // Apply multipliers to sqrtPriceX96
+        // uint160 sqrtUpper = uint160((uint256(sqrtPriceX96) * sqrtUp) / 1e9);
+        // uint160 sqrtLower = uint160((uint256(sqrtPriceX96) * sqrtDown) / 1e9);
+
+        // Convert sqrtPriceX96 to actual price
+        uint256 priceX96 = ((uint256(sqrtPriceX96) * 1e18) / 2 ** 96) ** 2; // price in 1e36 fixed-point
+
+        // Compute symmetric price range
+        uint256 priceLower = (priceX96 * 1e9) / Math.sqrt(1e18 + p);
+        uint256 priceUpper = (priceX96 * Math.sqrt(1e18 + p)) / 1e9;
+
+        // Convert back to sqrtPriceX96
+        uint160 sqrtLower = uint160((Math.sqrt(priceLower) * 2 ** 96) / 1e18);
+        uint160 sqrtUpper = uint160((Math.sqrt(priceUpper) * 2 ** 96) / 1e18);
+
+        // Convert sqrt prices to raw ticks
+        int24 rawUpper = TickMath.getTickAtSqrtRatio(sqrtUpper);
+        int24 rawLower = TickMath.getTickAtSqrtRatio(sqrtLower);
+
+        // Current tick
+        int24 currentTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+
+        // Round LOWER toward current tick
+        if (rawLower < currentTick)
+            tickLower = ((rawLower + spacing - 1) / spacing) * spacing;
+        else tickLower = (rawLower / spacing) * spacing;
+
+        // Round UPPER toward current tick
+        if (rawUpper > currentTick) tickUpper = (rawUpper / spacing) * spacing;
+        else tickUpper = ((rawUpper + spacing - 1) / spacing) * spacing;
+
+        require(tickLower < tickUpper, "Invalid symmetric price range");
     }
 
     function _approveToken(
