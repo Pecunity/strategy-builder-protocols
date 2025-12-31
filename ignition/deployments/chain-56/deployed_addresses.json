@@ -3,8 +3,9 @@
   "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0x51ba132B96607A4BfdCd212772aC2Ab3f5E1D851",
   "AAVEV3ConditionsModule#AaveV3PositionBalance": "0xfA6b2292f9b724FbE6d8dDa8F81ded50C458Fa22",
   "AAVEV3ConditionsModule#HealthFactorCondition": "0xAFE192c2A7A98950BF9eB7F45A1ac263fA8b0B50",
-  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x894B69Cf494A54a9991a3c88AC8D26eAd34945F9",
   "AAVEV3ActionsModule#AaveV3Actions": "0x75ccae0B5EBE56D842fba8054B9c350A0D280866",
   "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x5C3BeA466c51d6efCc0584e0698A9f21365504bD",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x9A29d3dE0784a1F86734f70BE5A87173E42D7B4B"
+  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x9A29d3dE0784a1F86734f70BE5A87173E42D7B4B",
+  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x7EA519eaE410533c0139108f5373697378165991",
+  "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeCheckerVault": "0xea97E6d13Dc7878b7876516a7a8DCeD5d8f8eBB7"
 }

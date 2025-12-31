@@ -11,8 +11,14 @@ export const PancakeSwapV3ConditionsModule = buildModule(
       [positionManager, strategyBuilder]
     );
 
+    const pancakeSwapV3PositionRangeCheckerVault = m.contract(
+      "PancakeSwapV3PositionRangeCheckerVault",
+      [positionManager]
+    );
+
     return {
       pancakeSwapV3PositionRangeChecker,
+      pancakeSwapV3PositionRangeCheckerVault,
     };
   }
 );

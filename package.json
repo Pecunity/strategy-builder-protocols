@@ -24,6 +24,6 @@
     "hardhat": "^2.26.0"
   },
   "dependencies": {
-    "pecunity-strategy-builder": "^2.0.3"
+    "pecunity-strategy-builder": "^2.1.0"
   }
 }
