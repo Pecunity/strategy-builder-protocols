@@ -8,10 +8,10 @@
     "verify": "npx hardhat ignition verify chain-$CHAIN_ID",
     "deploy:aaveV3:actions": "hardhat run scripts/deploy-aave-v3-actions.ts --network $NETWORK",
     "deploy:aaveV3:conditions": "hardhat run scripts/deploy-aave-v3-conditions.ts --network $NETWORK",
-    "deploy:uniswapV3:actions": "hardhat run scripts/deploy-uniswap-v3-actions.ts --network $NETWORK",
-    "deploy:uniswapV3:conditions": "hardhat run scripts/deploy-uniswap-v3-conditions.ts --network $NETWORK",
     "deploy:pancakeSwapV3:actions": "hardhat run scripts/deploy-pankace-swap-v3-actions.ts --network $NETWORK",
-    "deploy:pancakeSwapV3:conditions": "hardhat run scripts/deploy-pankace-swap-v3-conditions.ts --network $NETWORK"
+    "deploy:pancakeSwapV3:conditions": "hardhat run scripts/deploy-pankace-swap-v3-conditions.ts --network $NETWORK",
+    "deploy:apxFinance:actions": "hardhat run scripts/deploy-apx-finance-actions.ts --network $NETWORK",
+    "deploy:apxFinance:conditions": "hardhat run scripts/deploy-apx-finance-conditions.ts --network $NETWORK"
   },
   "keywords": [],
   "author": "",

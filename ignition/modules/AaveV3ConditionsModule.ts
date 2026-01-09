@@ -3,7 +3,6 @@ import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 const AaveV3ConditionsModule = buildModule("AAVEV3ConditionsModule", (m) => {
   const pool = m.getParameter("pool");
   const WETH = m.getParameter("WETH");
-  const oracle = m.getParameter("oracle");
 
   const healthFactor = m.contract("HealthFactorCondition", [pool]);
 

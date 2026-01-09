@@ -1,9 +1,10 @@
 import hre from "hardhat";
 import path from "path";
-import { UniswapV3ActionsModule } from "../ignition/modules/UniswapV3ActionsModule";
+
+import ApxFinanceConditionsModule from "../ignition/modules/ApxFinanceConditionsModule";
 
 async function main() {
-  await hre.ignition.deploy(UniswapV3ActionsModule, {
+  await hre.ignition.deploy(ApxFinanceConditionsModule, {
     parameters: path.resolve(
       __dirname,
       `../ignition/parameters/parameters-${hre.network.name}.json`

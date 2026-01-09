@@ -8,7 +8,7 @@ import {IPancakeSwapV3Zapper} from "../contracts/pancake-v3/utils/interfaces/IPa
 import {LiquidityAmounts} from "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 import {TickMath} from "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {ISwapRouterV3} from "../contracts/uniswap-v3/external/ISwapRouterV3.sol";
+import {ISwapRouterV3} from "../contracts/pancake-v3/external/ISwapRouterV3.sol";
 import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IPancakeSwapPoolState} from "../contracts/pancake-v3/action/interfaces/IPancakeSwapPoolState.sol";
