@@ -40,7 +40,8 @@ interface IPerpPositionAction is IAction {
         address baseToken,
         bool isLong,
         uint256 amount,
-        uint256 leverage
+        uint256 leverage,
+        uint64 slippage
     ) external view returns (PluginExecution[] memory);
 
     function openPositionPercentage(
@@ -49,7 +50,8 @@ interface IPerpPositionAction is IAction {
         address baseToken,
         bool isLong,
         uint256 percentage,
-        uint256 leverage
+        uint256 leverage,
+        uint64 slippage
     ) external view returns (PluginExecution[] memory);
 
     function closePosition(

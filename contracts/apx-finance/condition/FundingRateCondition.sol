@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {BaseCondition} from "pecunity-strategy-builder/contracts/condition/BaseCondition.sol";
 import {ITradingCore} from "../external/ITradingCore.sol";
+import {ITradingReader} from "../external/ITradingReader.sol";
 import {IPairsManager, PairMaxOiAndFundingFeeConfig} from "../external/IPairsManager.sol";
 import {SignedMath} from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 import {IFundingRateCondition} from "./interfaces/IFundingRateCondition.sol";
@@ -155,6 +156,13 @@ contract FundingRateCondition is BaseCondition, IFundingRateCondition {
         returns (uint8)
     {
         Condition memory condition = conditions[wallet][id];
+        if (condition.activePosition) {
+            if (
+                ITradingReader(apolloXRouter)
+                    .getPositionsV2(wallet, condition.baseToken)
+                    .length == 0
+            ) return 0;
+        }
 
         (
             int256 fundingFeeR,

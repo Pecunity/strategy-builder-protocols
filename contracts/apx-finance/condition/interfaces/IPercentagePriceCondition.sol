@@ -30,6 +30,7 @@ interface IPercentagePriceCondition {
         address baseToken;
         uint256 percentage;
         uint256 executionPrice;
+        bool activePosition;
         bool updateable;
     }
 

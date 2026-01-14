@@ -162,6 +162,7 @@ contract FundingRateConditionTest is Test {
                 fundingRate: 10,
                 withDeltaPercentage: false,
                 deltaPercentage: 0,
+                activePosition: false,
                 updateable: true
             });
     }

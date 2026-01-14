@@ -31,6 +31,7 @@ interface IFundingRateCondition {
         int256 fundingRate;
         bool withDeltaPercentage;
         uint256 deltaPercentage;
+        bool activePosition;
         bool updateable;
     }
 

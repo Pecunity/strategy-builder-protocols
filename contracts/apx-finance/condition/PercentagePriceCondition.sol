@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {BaseCondition} from "pecunity-strategy-builder/contracts/condition/BaseCondition.sol";
 import {IPriceFacade} from "../external/IPriceFacade.sol";
 import {IPercentagePriceCondition} from "./interfaces/IPercentagePriceCondition.sol";
+import {ITradingReader} from "../external/ITradingReader.sol";
 
 /// @title PercentagePriceCondition
 /// @notice A condition module that triggers based on a percentage deviation
@@ -160,6 +161,14 @@ contract PercentagePriceCondition is BaseCondition, IPercentagePriceCondition {
         returns (uint8 result)
     {
         Condition memory condition = conditions[wallet][id];
+
+        if (condition.activePosition) {
+            if (
+                ITradingReader(apolloXRouter)
+                    .getPositionsV2(wallet, condition.baseToken)
+                    .length == 0
+            ) return 0;
+        }
 
         uint256 currentPrice = IPriceFacade(apolloXRouter).getPrice(
             condition.baseToken

@@ -54,12 +54,13 @@ contract PerpPositionActionTest is Test {
         bool isLong = false;
         uint256 amountIn = 100 ether;
         uint256 leverage = 3000;
+        uint64 slippage = 990;
 
         deal(USDT, WALLET, amountIn);
 
         // Act
         PerpPositionAction.PluginExecution[] memory executions = action
-            .openPosition(USDT, BNB, isLong, amountIn, leverage);
+            .openPosition(USDT, BNB, isLong, amountIn, leverage, slippage);
 
         bytes32 hash = abi.decode(execute(executions, 1), (bytes32));
 

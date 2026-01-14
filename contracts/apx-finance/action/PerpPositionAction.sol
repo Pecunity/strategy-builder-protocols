@@ -35,6 +35,9 @@ contract PerpPositionAction is IPerpPositionAction, ITokenGetter {
     /// @dev Percentage base (1000 = 100%)
     uint256 constant PERCENTAGE_DECIMALS = 1000;
 
+    /// @dev Percentage slippage (1000 = 100%)
+    uint64 constant SLIPPAGE_DECIMALS = 1000;
+
     // ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     // ┃       StateVariable       ┃
     // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -70,6 +73,13 @@ contract PerpPositionAction is IPerpPositionAction, ITokenGetter {
     /// @param isLong True for long, false for short
     /// @param amount Margin amount (tokenIn decimals)
     /// @param leverage Leverage scaled by 1000 (1000 = 1x)
+    /// @param slippage Slippage tolerance factor used to derive the execution price.
+    ///        Expressed as a percentage multiplier:
+    ///        - For longs: executionPrice = basePrice * 1000 / slippage
+    ///        - For shorts: executionPrice = basePrice * slippage / 1000
+    ///        Example:
+    ///        slippage = 1010 allows ~1% unfavorable price movement.
+    ///        slippage = 1050 allows ~5% unfavorable price movement.
     ///
     /// @return executions Array of plugin executions
     function openPosition(
@@ -77,7 +87,8 @@ contract PerpPositionAction is IPerpPositionAction, ITokenGetter {
         address baseToken,
         bool isLong,
         uint256 amount,
-        uint256 leverage
+        uint256 leverage,
+        uint64 slippage
     ) public view returns (PluginExecution[] memory) {
         if (amount == 0) revert ZeroAmount();
         if (leverage == 0) revert InvalidLeverage();
@@ -101,7 +112,9 @@ contract PerpPositionAction is IPerpPositionAction, ITokenGetter {
             amountIn: uint96(amount),
             qty: uint80(positionQty),
             /// @dev Slight price offset to reduce rejection risk
-            price: (uint64(basePrice) * 100) / 99,
+            price: isLong
+                ? (uint64(basePrice) * SLIPPAGE_DECIMALS) / slippage
+                : (uint64(basePrice) * slippage) / SLIPPAGE_DECIMALS,
             stopLoss: 0,
             takeProfit: 0,
             broker: brokerId
@@ -128,6 +141,13 @@ contract PerpPositionAction is IPerpPositionAction, ITokenGetter {
     /// @param isLong Long or short
     /// @param percentage Percentage of balance (1000 = 100%)
     /// @param leverage Leverage scaled by 1000
+    /// @param slippage Slippage tolerance factor used to derive the execution price.
+    ///        Expressed as a percentage multiplier:
+    ///        - For longs: executionPrice = basePrice * 100 / slippage
+    ///        - For shorts: executionPrice = basePrice * slippage / 100
+    ///        Example:
+    ///        slippage = 101 allows ~1% unfavorable price movement.
+    ///        slippage = 105 allows ~5% unfavorable price movement.
     ///
     /// @return executions Plugin executions
     function openPositionPercentage(
@@ -136,12 +156,21 @@ contract PerpPositionAction is IPerpPositionAction, ITokenGetter {
         address baseToken,
         bool isLong,
         uint256 percentage,
-        uint256 leverage
+        uint256 leverage,
+        uint64 slippage
     ) external view returns (PluginExecution[] memory) {
         uint256 amount = (IERC20(tokenIn).balanceOf(account) * percentage) /
             PERCENTAGE_DECIMALS;
 
-        return openPosition(tokenIn, baseToken, isLong, amount, leverage);
+        return
+            openPosition(
+                tokenIn,
+                baseToken,
+                isLong,
+                amount,
+                leverage,
+                slippage
+            );
     }
 
     /// @notice Builds execution to close a perpetual position
