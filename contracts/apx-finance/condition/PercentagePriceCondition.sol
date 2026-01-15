@@ -162,12 +162,12 @@ contract PercentagePriceCondition is BaseCondition, IPercentagePriceCondition {
     {
         Condition memory condition = conditions[wallet][id];
 
-        if (condition.activePosition) {
-            if (
-                ITradingReader(apolloXRouter)
-                    .getPositionsV2(wallet, condition.baseToken)
-                    .length == 0
-            ) return 0;
+        bool positionActive = ITradingReader(apolloXRouter)
+            .getPositionsV2(wallet, condition.baseToken)
+            .length > 0;
+
+        if (condition.activePosition != positionActive) {
+            return 0;
         }
 
         uint256 currentPrice = IPriceFacade(apolloXRouter).getPrice(

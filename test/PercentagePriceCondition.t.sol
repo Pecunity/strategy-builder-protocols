@@ -3,193 +3,198 @@ pragma solidity ^0.8.28;
 
 import "forge-std/Test.sol";
 
-import {FundingRateCondition} from "../contracts/apx-finance/condition/FundingRateCondition.sol";
-import {IFundingRateCondition} from "../contracts/apx-finance/condition/interfaces/IFundingRateCondition.sol";
+import {PercentagePriceCondition} from "../contracts/apx-finance/condition/PercentagePriceCondition.sol";
+import {IPercentagePriceCondition} from "../contracts/apx-finance/condition/interfaces/IPercentagePriceCondition.sol";
 import {ITradingCore} from "../contracts/apx-finance/external/ITradingCore.sol";
 import {IPairsManager, PairMaxOiAndFundingFeeConfig} from "../contracts/apx-finance/external/IPairsManager.sol";
+import {ITradingReader} from "../contracts/apx-finance/external/ITradingReader.sol";
 
-// ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃        Mocks          ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━━┛
-contract TradingCoreMock {
-    mapping(address => ITradingCore.PairQty) internal pairQty;
+contract PercentagePriceConditionTest is Test {
+    PercentagePriceCondition condition;
+    MockApolloXRouter router;
 
-    function setPairQty(
-        address baseToken,
-        uint256 longQty,
-        uint256 shortQty
-    ) external {
-        pairQty[baseToken] = ITradingCore.PairQty({
-            longQty: longQty,
-            shortQty: shortQty
-        });
-    }
-
-    function getPairQty(
-        address baseToken
-    ) external view returns (ITradingCore.PairQty memory) {
-        return pairQty[baseToken];
-    }
-}
-
-contract PairsManagerMock {
-    mapping(address => PairMaxOiAndFundingFeeConfig) internal configs;
-
-    function setPairConfig(
-        address baseToken,
-        PairMaxOiAndFundingFeeConfig calldata cfg
-    ) external {
-        configs[baseToken] = cfg;
-    }
-
-    function getPairConfig(
-        address baseToken
-    ) external view returns (PairMaxOiAndFundingFeeConfig memory) {
-        return configs[baseToken];
-    }
-}
-
-// ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃   Test Contract       ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━━┛
-
-contract FundingRateConditionTest is Test {
-    FundingRateCondition condition;
-    TradingCoreMock tradingCore;
-    PairsManagerMock pairsManager;
-
-    address router;
-    address user = address(0xBEEF);
+    address wallet = address(0xBEEF);
     address baseToken = address(0xCAFE);
 
     uint32 constant CONDITION_ID = 1;
 
     function setUp() public {
-        tradingCore = new TradingCoreMock();
-        pairsManager = new PairsManagerMock();
+        router = new MockApolloXRouter();
+        condition = new PercentagePriceCondition(address(router));
 
-        // router is mocked by deploying both mocks to same address space
-        // via a simple proxy-style trick
-        router = address(
-            new RouterMock(address(tradingCore), address(pairsManager))
+        // default setup
+        router.setPrice(baseToken, 1_000);
+        router.setPositionsLength(1);
+    }
+
+    function _addCondition(
+        IPercentagePriceCondition.Direction direction,
+        IPercentagePriceCondition.Comparison comparison,
+        bool activePosition,
+        bool updateable
+    ) internal {
+        IPercentagePriceCondition.Condition memory c;
+        c.baseToken = baseToken;
+        c.percentage = 100; // 10%
+        c.direction = direction;
+        c.comparison = comparison;
+        c.activePosition = activePosition;
+        c.updateable = updateable;
+
+        vm.prank(wallet);
+        condition.addCondition(CONDITION_ID, c);
+    }
+
+    /* ─────────────────────────────────────────────
+       Active Position Checks
+    ───────────────────────────────────────────── */
+
+    function test_ReturnsZero_WhenActiveExpectedButNoPosition() public {
+        router.setPositionsLength(0);
+
+        _addCondition(
+            IPercentagePriceCondition.Direction.LONG,
+            IPercentagePriceCondition.Comparison.GREATER,
+            true,
+            false
         );
 
-        condition = new FundingRateCondition(router);
-
-        // default market state
-        tradingCore.setPairQty(baseToken, 1_000 ether, 500 ether);
-
-        pairsManager.setPairConfig(
-            baseToken,
-            PairMaxOiAndFundingFeeConfig({
-                maxLongOiUsd: 0,
-                maxShortOiUsd: 0,
-                fundingFeePerBlockP: 10000000000, // 0.1%
-                maxFundingFeeR: 1140000000000,
-                minFundingFeeR: 10000000000
-            })
-        );
-    }
-
-    // ┏━━━━━━━━━━━━━━━━━━━━━━┓
-    // ┃       Tests          ┃
-    // ┗━━━━━━━━━━━━━━━━━━━━━━┛
-
-    function test_addCondition_storesCondition() public {
-        IFundingRateCondition.Condition memory c = _defaultCondition();
-
-        vm.prank(user);
-        condition.addCondition(CONDITION_ID, c);
-
-        IFundingRateCondition.Condition memory stored = condition
-            .walletCondition(user, CONDITION_ID);
-
-        assertEq(uint8(stored.comparison), uint8(c.comparison));
-        assertEq(uint8(stored.positionType), uint8(c.positionType));
-        assertEq(stored.baseToken, baseToken);
-        assertEq(stored.fundingRate, c.fundingRate);
-    }
-
-    function test_checkCondition_GREATER_returnsTrue() public {
-        IFundingRateCondition.Condition memory c = _defaultCondition();
-
-        vm.prank(user);
-        condition.addCondition(CONDITION_ID, c);
-
-        uint8 result = condition.checkCondition(user, CONDITION_ID);
-        assertEq(result, 1);
-    }
-
-    function test_checkCondition_withDeltaPercentage_failsBelowThreshold()
-        public
-    {
-        IFundingRateCondition.Condition memory c = _defaultCondition();
-
-        c.withDeltaPercentage = true;
-        c.deltaPercentage = 900; // too high
-
-        vm.prank(user);
-        condition.addCondition(CONDITION_ID, c);
-
-        uint8 result = condition.checkCondition(user, CONDITION_ID);
+        uint8 result = condition.checkCondition(wallet, CONDITION_ID);
         assertEq(result, 0);
     }
 
-    function test_isUpdateable_returnsTrue() public {
-        IFundingRateCondition.Condition memory c = _defaultCondition();
+    function test_ReturnsZero_WhenInactiveExpectedButPositionExists() public {
+        _addCondition(
+            IPercentagePriceCondition.Direction.LONG,
+            IPercentagePriceCondition.Comparison.GREATER,
+            false,
+            false
+        );
 
-        vm.prank(user);
-        condition.addCondition(CONDITION_ID, c);
-
-        bool updateable = condition.isUpdateable(user, CONDITION_ID);
-        assertTrue(updateable);
+        uint8 result = condition.checkCondition(wallet, CONDITION_ID);
+        assertEq(result, 0);
     }
 
-    // ┏━━━━━━━━━━━━━━━━━━━━━━┓
-    // ┃       Helpers        ┃
-    // ┗━━━━━━━━━━━━━━━━━━━━━━┛
+    /* ─────────────────────────────────────────────
+       LONG Direction (price decreases)
+    ───────────────────────────────────────────── */
 
-    function _defaultCondition()
-        internal
-        view
-        returns (IFundingRateCondition.Condition memory)
-    {
-        return
-            IFundingRateCondition.Condition({
-                comparison: IFundingRateCondition.Comparison.GREATER,
-                positionType: IFundingRateCondition.PositionType.LONG,
-                baseToken: baseToken,
-                fundingRate: 10,
-                withDeltaPercentage: false,
-                deltaPercentage: 0,
-                activePosition: false,
-                updateable: true
-            });
+    function test_LONG_Triggers_WhenPriceAboveExecution() public {
+        _addCondition(
+            IPercentagePriceCondition.Direction.LONG,
+            IPercentagePriceCondition.Comparison.GREATER,
+            true,
+            false
+        );
+
+        // executionPrice = 1000 - 10% = 900
+        router.setPrice(baseToken, 950);
+
+        uint8 result = condition.checkCondition(wallet, CONDITION_ID);
+        assertEq(result, 1);
+    }
+
+    /* ─────────────────────────────────────────────
+       SHORT Direction (price increases)
+    ───────────────────────────────────────────── */
+
+    function test_SHORT_Triggers_WhenPriceBelowExecution() public {
+        _addCondition(
+            IPercentagePriceCondition.Direction.SHORT,
+            IPercentagePriceCondition.Comparison.LESS,
+            true,
+            false
+        );
+
+        // executionPrice = 1000 + 10% = 1100
+        router.setPrice(baseToken, 1050);
+
+        uint8 result = condition.checkCondition(wallet, CONDITION_ID);
+        assertEq(result, 1);
+    }
+
+    function test_SHORT_Triggers_WhenPriceAboveExecution() public {
+        _addCondition(
+            IPercentagePriceCondition.Direction.SHORT,
+            IPercentagePriceCondition.Comparison.GREATER,
+            true,
+            false
+        );
+
+        // executionPrice = 1000 + 10% = 1100
+        router.setPrice(baseToken, 1150);
+
+        uint8 result = condition.checkCondition(wallet, CONDITION_ID);
+        assertEq(result, 1);
+    }
+
+    /* ─────────────────────────────────────────────
+       updateCondition
+    ───────────────────────────────────────────── */
+
+    function test_UpdateCondition_RecalculatesExecutionPrice() public {
+        _addCondition(
+            IPercentagePriceCondition.Direction.LONG,
+            IPercentagePriceCondition.Comparison.GREATER,
+            true,
+            true
+        );
+
+        // change oracle price
+        router.setPrice(baseToken, 2_000);
+
+        vm.prank(wallet);
+        bool updated = condition.updateCondition(CONDITION_ID);
+        assertTrue(updated);
+
+        IPercentagePriceCondition.Condition memory c = condition
+            .walletCondition(wallet, CONDITION_ID);
+
+        // new execution price = 2000 - 10% = 1800
+        assertEq(c.executionPrice, 1800);
+    }
+
+    function test_UpdateCondition_Fails_WhenNotUpdateable() public {
+        _addCondition(
+            IPercentagePriceCondition.Direction.LONG,
+            IPercentagePriceCondition.Comparison.GREATER,
+            true,
+            false
+        );
+
+        vm.prank(wallet);
+        bool updated = condition.updateCondition(CONDITION_ID);
+        assertFalse(updated);
     }
 }
 
-// ┏━━━━━━━━━━━━━━━━━━━━━━━┓
-// ┃   Simple Router Mock  ┃
-// ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+contract MockApolloXRouter {
+    // price oracle
+    mapping(address => uint256) internal prices;
 
-contract RouterMock {
-    address public tradingCore;
-    address public pairsManager;
+    // positions
+    uint256 public positionsLength;
 
-    constructor(address _tradingCore, address _pairsManager) {
-        tradingCore = _tradingCore;
-        pairsManager = _pairsManager;
+    /* ───────── Price Facade ───────── */
+
+    function setPrice(address token, uint256 price) external {
+        prices[token] = price;
     }
 
-    function getPairQty(
-        address baseToken
-    ) external view returns (ITradingCore.PairQty memory) {
-        return ITradingCore(tradingCore).getPairQty(baseToken);
+    function getPrice(address token) external view returns (uint256) {
+        return prices[token];
     }
 
-    function getPairConfig(
-        address baseToken
-    ) external view returns (PairMaxOiAndFundingFeeConfig memory) {
-        return IPairsManager(pairsManager).getPairConfig(baseToken);
+    /* ───────── Trading Reader ───────── */
+
+    function setPositionsLength(uint256 len) external {
+        positionsLength = len;
+    }
+
+    function getPositionsV2(
+        address,
+        address
+    ) external view returns (ITradingReader.Position[] memory positions) {
+        positions = new ITradingReader.Position[](positionsLength);
     }
 }

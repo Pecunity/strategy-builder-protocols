@@ -116,7 +116,11 @@ contract FundingRateCondition is BaseCondition, IFundingRateCondition {
         );
 
         // Invert funding if shorts dominate and user is long
-        if (ppi.shortQty > ppi.longQty && positionType == PositionType.LONG) {
+        if (ppi.longQty > ppi.shortQty && positionType == PositionType.LONG) {
+            fundingFeeR = -fundingFeeR;
+        }
+
+        if (ppi.shortQty > ppi.longQty && positionType == PositionType.SHORT) {
             fundingFeeR = -fundingFeeR;
         }
 
@@ -156,12 +160,13 @@ contract FundingRateCondition is BaseCondition, IFundingRateCondition {
         returns (uint8)
     {
         Condition memory condition = conditions[wallet][id];
-        if (condition.activePosition) {
-            if (
-                ITradingReader(apolloXRouter)
-                    .getPositionsV2(wallet, condition.baseToken)
-                    .length == 0
-            ) return 0;
+
+        bool positionActive = ITradingReader(apolloXRouter)
+            .getPositionsV2(wallet, condition.baseToken)
+            .length > 0;
+
+        if (condition.activePosition != positionActive) {
+            return 0;
         }
 
         (

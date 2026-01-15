@@ -8,7 +8,7 @@
   "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x9A29d3dE0784a1F86734f70BE5A87173E42D7B4B",
   "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x7EA519eaE410533c0139108f5373697378165991",
   "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeCheckerVault": "0xea97E6d13Dc7878b7876516a7a8DCeD5d8f8eBB7",
-  "ApxFinanceConditionsModule#FundingRateCondition": "0xbE5488174917dB6333094c755b15F951305cDBC4",
-  "ApxFinanceConditionsModule#PercentagePriceCondition": "0x29eAD282d37A2B000e917174Daa76f3dde8023Ab",
-  "ApxFinanceActionsModule#PerpPositionAction": "0x5ef90A12B20f721aC021A94CAE361bd0F9B05096"
+  "ApxFinanceActionsModule#PerpPositionAction": "0x5ef90A12B20f721aC021A94CAE361bd0F9B05096",
+  "ApxFinanceConditionsModule#FundingRateCondition": "0x10b66ee2a3dcFAF8768E6d14ACc45eBa8586EB9a",
+  "ApxFinanceConditionsModule#PercentagePriceCondition": "0xA53653395fd494607A2257ec8D31F1008DA4BA12"
 }
