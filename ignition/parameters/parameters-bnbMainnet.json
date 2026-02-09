@@ -15,7 +15,8 @@
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   },
   "PancakeSwapV3TokenGetterModule": {
-    "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
+    "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364",
+    "masterchef": "0x556B9306565093C855AEA9AE92A594704c2Cd59e"
   },
   "ApxFinanceConditionsModule": {
     "apxRouter": "0x1b6F2d3844C6ae7D56ceb3C3643b9060ba28FEb0"

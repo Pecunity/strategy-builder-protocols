@@ -5,8 +5,11 @@ export const PancakeSwapV3TokenGetterModule = buildModule(
   (m) => {
     const positionManager = m.getParameter("positionManager");
 
+    const masterchef = m.getParameter("masterchef");
+
     const masterChefTokenGetter = m.contract("MasterChefTokenGetter", [
       positionManager,
+      masterchef,
     ]);
 
     return {

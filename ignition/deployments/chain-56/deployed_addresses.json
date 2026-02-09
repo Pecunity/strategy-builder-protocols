@@ -11,5 +11,5 @@
   "ApxFinanceActionsModule#PerpPositionAction": "0x5ef90A12B20f721aC021A94CAE361bd0F9B05096",
   "ApxFinanceConditionsModule#FundingRateCondition": "0x10b66ee2a3dcFAF8768E6d14ACc45eBa8586EB9a",
   "ApxFinanceConditionsModule#PercentagePriceCondition": "0xA53653395fd494607A2257ec8D31F1008DA4BA12",
-  "PancakeSwapV3TokenGetterModule#MasterChefTokenGetter": "0x6fF66625E2251c37359F209C3228007fF1bdf58f"
+  "PancakeSwapV3TokenGetterModule#MasterChefTokenGetter": "0xeE3F925b4Bacf869c0EA948B6058f4448f6B05Af"
 }

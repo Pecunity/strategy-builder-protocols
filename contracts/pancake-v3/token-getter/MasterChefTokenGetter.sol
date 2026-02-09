@@ -12,9 +12,11 @@ contract MasterChefTokenGetter is ITokenGetter {
     error InvalidTokenGetterID();
 
     address public immutable positionManager;
+    address public immutable masterChef;
 
-    constructor(address _positionManager) {
+    constructor(address _positionManager, address _masterChef) {
         positionManager = _positionManager;
+        masterChef = _masterChef;
     }
 
     function getTokenForSelector(
@@ -27,6 +29,10 @@ contract MasterChefTokenGetter is ITokenGetter {
         if (selector == INonfungiblePositionManager.collect.selector) {
             INonfungiblePositionManager.CollectParams memory _params = abi
                 .decode(params, (INonfungiblePositionManager.CollectParams));
+
+            uint256 tokenId = INonfungiblePositionManager(masterChef)
+                .tokenOfOwnerByIndex(_params.recipient, 0);
+
             (
                 ,
                 ,
@@ -40,9 +46,7 @@ contract MasterChefTokenGetter is ITokenGetter {
                 ,
                 ,
 
-            ) = INonfungiblePositionManager(positionManager).positions(
-                    _params.tokenId
-                );
+            ) = INonfungiblePositionManager(positionManager).positions(tokenId);
             return token0;
         }
 

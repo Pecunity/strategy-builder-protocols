@@ -11,6 +11,9 @@ contract MasterChefTokenGetterTest is Test {
     address public constant positionManager =
         0x46A15B0b27311cedF172AB29E4f4766fbE7F4364;
 
+    address public constant masterchef =
+        0x556B9306565093C855AEA9AE92A594704c2Cd59e;
+
     string BNB_FORK = vm.envString("BNB_FORK");
     uint256 bnbFork;
 
@@ -18,12 +21,15 @@ contract MasterChefTokenGetterTest is Test {
         bnbFork = vm.createFork(BNB_FORK);
         vm.selectFork(bnbFork);
 
-        masterChefTokenGetter = new MasterChefTokenGetter(positionManager);
+        masterChefTokenGetter = new MasterChefTokenGetter(
+            positionManager,
+            masterchef
+        );
     }
 
     function testCollectReturnsToken0() public {
         // --- Arrange ---
-        uint256 tokenId = 6481752;
+        uint256 tokenId = 6464684;
 
         address token0 = address(0x55d398326f99059fF775485246999027B3197955);
         address token1 = address(0xBBB);
@@ -31,10 +37,12 @@ contract MasterChefTokenGetterTest is Test {
         // collect selector berechnen
         bytes4 selector = INonfungiblePositionManager.collect.selector;
 
+        address recipient = 0x53C6C18728F2Afe79Ed8222Bd320a561F006464a;
+
         // params wie in collect encoden
         bytes memory params = abi.encode(
             tokenId,
-            address(this),
+            recipient,
             uint128(100),
             uint128(200)
         );
