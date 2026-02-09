@@ -14,6 +14,9 @@
     "strategyBuilder": "0x32Ab11EB7fdf61D46432445091Cb6f52d9c8a130",
     "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
   },
+  "PancakeSwapV3TokenGetterModule": {
+    "positionManager": "0x46A15B0b27311cedF172AB29E4f4766fbE7F4364"
+  },
   "ApxFinanceConditionsModule": {
     "apxRouter": "0x1b6F2d3844C6ae7D56ceb3C3643b9060ba28FEb0"
   },
