@@ -1,15 +1,15 @@
 {
-  "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0xE234Df5EfA5c5B1C04efc4F35d86F89B9A427509",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0x51ba132B96607A4BfdCd212772aC2Ab3f5E1D851",
   "AAVEV3ConditionsModule#AaveV3PositionBalance": "0xfA6b2292f9b724FbE6d8dDa8F81ded50C458Fa22",
   "AAVEV3ConditionsModule#HealthFactorCondition": "0xAFE192c2A7A98950BF9eB7F45A1ac263fA8b0B50",
   "AAVEV3ActionsModule#AaveV3Actions": "0x75ccae0B5EBE56D842fba8054B9c350A0D280866",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x5C3BeA466c51d6efCc0584e0698A9f21365504bD",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0x9A29d3dE0784a1F86734f70BE5A87173E42D7B4B",
   "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeChecker": "0x7EA519eaE410533c0139108f5373697378165991",
   "PancakeSwapV3ConditionsModule#PancakeSwapV3PositionRangeCheckerVault": "0xea97E6d13Dc7878b7876516a7a8DCeD5d8f8eBB7",
   "ApxFinanceActionsModule#PerpPositionAction": "0x5ef90A12B20f721aC021A94CAE361bd0F9B05096",
   "ApxFinanceConditionsModule#FundingRateCondition": "0x10b66ee2a3dcFAF8768E6d14ACc45eBa8586EB9a",
   "ApxFinanceConditionsModule#PercentagePriceCondition": "0xA53653395fd494607A2257ec8D31F1008DA4BA12",
-  "PancakeSwapV3TokenGetterModule#MasterChefTokenGetter": "0xeE3F925b4Bacf869c0EA948B6058f4448f6B05Af"
+  "PancakeSwapV3TokenGetterModule#MasterChefTokenGetter": "0xeE3F925b4Bacf869c0EA948B6058f4448f6B05Af",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0x3690FaE72fEE52eb7fC78d4f915CD671dc1e7Ad0",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0x74c10c582408Bc4b562035EF73d0D84D3ad25074",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x6De453592E536B7fB249Ed9e096f51D975045695",
+  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0xda02d64E0c9b7621b7AF1FA36AaE4A3DdDc506e8"
 }

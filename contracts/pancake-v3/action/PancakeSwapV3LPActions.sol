@@ -317,6 +317,53 @@ contract PancakeSwapV3LPActions is IPancakeSwapV3LPActions, ITokenGetter {
             );
     }
 
+    function addLiquidityPercentageToPosition(
+        AddLiquidityPercentageToPositionParams memory params
+    ) external view returns (PluginExecution[] memory) {
+        (
+            ,
+            ,
+            address token0,
+            address token1,
+            uint24 fee,
+            int24 tickLower,
+            int24 tickUpper,
+            ,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(positionManager).positions(
+                params.positionId
+            );
+
+        (
+            uint256 amount0,
+            uint256 amount1
+        ) = _getPercentageAmountsForPossibleMax(
+                params.wallet,
+                token0,
+                token1,
+                params.percentage,
+                fee,
+                tickLower,
+                tickUpper
+            );
+
+        return
+            increaseLiquidity(
+                INonfungiblePositionManager.IncreaseLiquidityParams({
+                    tokenId: params.positionId,
+                    amount0Desired: amount0,
+                    amount1Desired: amount1,
+                    amount0Min: 0,
+                    amount1Min: 0,
+                    deadline: block.timestamp
+                }),
+                token0 == address(0) || token1 == address(0)
+            );
+    }
+
     function removeLiquidity(
         address wallet,
         uint256 tokenId,

@@ -424,6 +424,89 @@ contract PancakeSwapV3LPActionsTest is Test {
         assertTrue(amount1 > IERC20(WETH9).balanceOf(address(WALLET)));
     }
 
+    function test_addLiquidityPercentageToPosition_Success(
+        uint256 _amount0,
+        uint256 _amount1,
+        uint256 _percentage
+    ) external {
+        uint256 amount0 = bound(_amount0, 100e18, 1000e18);
+        uint256 amount1 = bound(_amount1, 1e18, 100e18);
+        uint256 percentage = bound(
+            _percentage,
+            1,
+            lpActions.PERCENTAGE_FACTOR()
+        );
+
+        deal(USDT, WALLET, amount0);
+        deal(WETH9, WALLET, amount1);
+
+        // get the expected amount of tokens
+        address pool = IUniswapV3Factory(FACTORY).getPool(USDT, WETH9, poolFee);
+        (uint160 sqrtPriceX96, , , , , , ) = IPancakeSwapPoolState(pool)
+            .slot0();
+        int24 tickSpacing = IUniswapV3Pool(pool).tickSpacing();
+
+        //first create a lp position
+        IAction.PluginExecution[] memory createLpExecutions = lpActions
+            .addLiqudityPercentage(
+                IPancakeSwapV3LPActions.AddLiqudityPercentageParams({
+                    token0: USDT,
+                    token1: WETH9,
+                    fee: poolFee,
+                    wallet: WALLET,
+                    percentage: 100, //First 10 %
+                    tickLower: (int24(-887272) / tickSpacing) * tickSpacing,
+                    tickUpper: (int24(887272) / tickSpacing) * tickSpacing
+                })
+            );
+
+        execute(createLpExecutions);
+        uint256 tokenId = INonfungiblePositionManager(POSITION_MANAGER)
+            .tokenOfOwnerByIndex(WALLET, 0);
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            uint128 liquidityBefore,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(POSITION_MANAGER).positions(tokenId);
+
+        IAction.PluginExecution[] memory executions = lpActions
+            .addLiquidityPercentageToPosition(
+                IPancakeSwapV3LPActions.AddLiquidityPercentageToPositionParams({
+                    positionId: tokenId,
+                    wallet: WALLET,
+                    percentage: 1000 //Supply 100% of my tokens
+                })
+            );
+
+        execute(executions);
+
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            uint128 currentLiqudity,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(POSITION_MANAGER).positions(tokenId);
+
+        assertTrue(currentLiqudity > liquidityBefore);
+    }
+
     function test_removeLiquidity_Success(
         uint256 _amount0,
         uint256 _amount1

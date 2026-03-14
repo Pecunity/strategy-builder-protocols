@@ -115,7 +115,7 @@ contract PancakeSwapV3OneSidedLPActions is
         uint24 percentage,
         uint256 amountIn,
         AddLiquidityOneSidedRangeParams memory params
-    ) external view returns (PluginExecution[] memory executions) {
+    ) public view returns (PluginExecution[] memory executions) {
         // TODO: Calculate tickLower and tickUpper from percentage around current price
         // then reuse addLiquidityOneSided logic
         executions = new PluginExecution[](2);
@@ -154,6 +154,26 @@ contract PancakeSwapV3OneSidedLPActions is
 
         // 4. Reuse existing logic (or inline it here)
         executions = addLiquidityOneSided(amountIn, oneSidedParams);
+    }
+
+    function addLiquidityOneSidedPercentageRangePercentageOfBalance(
+        uint16 percentageOfBalance,
+        uint24 percentageRange,
+        AddLiquidityOneSidedRangeParams memory params
+    ) external view returns (PluginExecution[] memory executions) {
+        require(percentageOfBalance <= 10000, "Invalid percentage");
+
+        // 1. Get token balance
+        uint256 balance = IERC20(params.tokenIn).balanceOf(msg.sender);
+
+        // 2. Calculate amount
+        uint256 amountIn = (balance * percentageOfBalance) / 10000;
+
+        executions = addLiquidityOneSidedPercentageRange(
+            percentageRange,
+            amountIn,
+            params
+        );
     }
 
     function addLiquidityOneSidedToExistingPosition(

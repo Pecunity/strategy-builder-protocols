@@ -32,6 +32,12 @@ interface IPancakeSwapV3LPActions is IAction {
         uint256 percentage;
     }
 
+    struct AddLiquidityPercentageToPositionParams {
+        address wallet;
+        uint256 positionId;
+        uint256 percentage;
+    }
+
     struct RemoveLiquidityParams {
         address wallet;
         uint256 tokenId;
