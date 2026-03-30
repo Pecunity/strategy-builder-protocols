@@ -26,14 +26,14 @@ export const PancakeSwapV3ActionsModule = buildModule(
 
     const pancakeSwapV3OneSidedLPActions = m.contract(
       "PancakeSwapV3OneSidedLPActions",
-      [zapper, positionManager, swapRouter]
+      [zapper, positionManager, swapRouter],
     );
 
     return {
+      pancakeSwapV3SwapActions,
       pancakeSwapV3LPActions,
       zapper,
       pancakeSwapV3OneSidedLPActions,
-      pancakeSwapV3SwapActions,
     };
-  }
+  },
 );

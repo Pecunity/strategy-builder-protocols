@@ -11,5 +11,5 @@
   "PancakeSwapV3ActionsModule#PancakeSwapV3LPActions": "0x3690FaE72fEE52eb7fC78d4f915CD671dc1e7Ad0",
   "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0x74c10c582408Bc4b562035EF73d0D84D3ad25074",
   "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x6De453592E536B7fB249Ed9e096f51D975045695",
-  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0xda02d64E0c9b7621b7AF1FA36AaE4A3DdDc506e8"
+  "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0xd62347e9873b09EC24a50512f5000697654A3C2b"
 }

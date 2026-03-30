@@ -281,6 +281,98 @@ contract PancakeSwapV3OneSidedLPActionsTest is Test {
         console.log("Balance Token 1:", balanceToken1);
     }
 
+    function testAddLiquidityOneSidedPercentageRangePercentageOfBalance()
+        public
+    {
+        uint24 percentage = 1000; // 5% range (±2.5%)
+        uint256 amountIn = 8400000000000000000;
+
+        address tokenIn = 0x55d398326f99059fF775485246999027B3197955;
+        address token1 = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+
+        deal(tokenIn, WALLET, amountIn);
+
+        // Prepare params (assuming AddLiquidityOneSidedRangeParams struct)
+        IPancakeSwapV3OneSidedLPActions.AddLiquidityOneSidedRangeParams
+            memory params = IPancakeSwapV3OneSidedLPActions
+                .AddLiquidityOneSidedRangeParams({
+                    token0: tokenIn,
+                    token1: token1,
+                    tokenIn: tokenIn, // One-sided with token0
+                    fee: 500,
+                    recipient: WALLET
+                });
+
+        // Fetch current pool state for logging
+        IPancakeSwapPoolState pool = IPancakeSwapPoolState(
+            zapper.getPoolAddress(params.token0, params.token1, params.fee)
+        );
+        (
+            uint160 sqrtPriceX96,
+            int24 currentTick,
+            ,
+            ,
+            ,
+            ,
+
+        ) = IPancakeSwapPoolState(address(pool)).slot0();
+
+        console.log("SqrtPriceX96", sqrtPriceX96);
+
+        // Current price calculation: (sqrtPriceX96 / 2^96)^2, adjusted for decimals
+        uint256 currentPrice = _sqrtPriceToPrice(
+            sqrtPriceX96,
+            IERC20Metadata(pool.token0()).decimals(),
+            IERC20Metadata(pool.token1()).decimals()
+        );
+
+        console.log("=== Pool State ===");
+        console.log("Current Tick:", int(currentTick));
+        console.log("Current Price (Token1/Token0):", currentPrice);
+        console.log("Sqrt Price X96:", sqrtPriceX96);
+
+        // Call the function
+        vm.prank(WALLET);
+        IPancakeSwapV3OneSidedLPActions.PluginExecution[]
+            memory executions = action
+                .addLiquidityOneSidedPercentageRangePercentageOfBalance(
+                    10000,
+                    percentage,
+                    params
+                );
+
+        bytes memory result = execute(executions, 1);
+
+        uint256 tokenId = abi.decode(result, (uint256));
+
+        (
+            ,
+            ,
+            address _token0,
+            address _token1,
+            ,
+            int24 currTickLower,
+            int24 currTickUpper,
+            uint128 liquidity,
+            ,
+            ,
+            ,
+
+        ) = INonfungiblePositionManager(POSITION_MANAGER).positions(tokenId);
+
+        console.log("=== LP Position State ===");
+        console.log("Current Tick:", int(currentTick));
+        console.log("Current Tick Lower:", int(currTickLower));
+        console.log("Current Tick Upper:", int(currTickUpper));
+        console.log("Current Liquidity:", uint(liquidity));
+
+        uint256 balanceToken0 = IERC20(TOKEN0).balanceOf(WALLET);
+        uint256 balanceToken1 = IERC20(TOKEN1).balanceOf(WALLET);
+
+        console.log("Balance Token 0:", balanceToken0);
+        console.log("Balance Token 1:", balanceToken1);
+    }
+
     function execute(
         IPancakeSwapV3OneSidedLPActions.PluginExecution[] memory executions,
         uint256 output

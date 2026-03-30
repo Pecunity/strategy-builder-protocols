@@ -176,6 +176,29 @@ contract PancakeSwapV3OneSidedLPActions is
         );
     }
 
+    function addLiquidityOneSidedToExistingPositionPercentage(
+        uint16 percentageOfBalance, // z. B. 5000 = 50%
+        uint256 positionId,
+        address tokenIn,
+        address wallet
+    ) public view returns (PluginExecution[] memory) {
+        require(percentageOfBalance <= 10000, "Invalid percentage");
+
+        // 1. Get token balance
+        uint256 balance = IERC20(tokenIn).balanceOf(msg.sender);
+
+        // 2. Calculate amount
+        uint256 amountIn = (balance * percentageOfBalance) / 10000;
+
+        return
+            addLiquidityOneSidedToExistingPosition(
+                amountIn,
+                positionId,
+                tokenIn,
+                wallet
+            );
+    }
+
     function addLiquidityOneSidedToExistingPosition(
         uint256 amountIn,
         uint256 positionId,
