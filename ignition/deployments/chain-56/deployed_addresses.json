@@ -12,5 +12,5 @@
   "PancakeSwapV3ActionsModule#PancakeSwapV3SwapActions": "0x74c10c582408Bc4b562035EF73d0D84D3ad25074",
   "PancakeSwapV3ActionsModule#PancakeSwapV3Zapper": "0x6De453592E536B7fB249Ed9e096f51D975045695",
   "PancakeSwapV3ActionsModule#PancakeSwapV3OneSidedLPActions": "0xd62347e9873b09EC24a50512f5000697654A3C2b",
-  "AaveUnwindHelperModule#AaveUnwindHelper": "0xa50224fCE527C8ADEAb75c935a26551e13193363"
+  "AaveUnwindHelperModule#AaveUnwindHelper": "0x2Bf5d7400a4F9990D47fEea8A98D64A679f3c2c5"
 }

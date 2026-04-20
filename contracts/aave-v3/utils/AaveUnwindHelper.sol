@@ -85,8 +85,7 @@ interface ISwapRouter {
         address tokenIn;
         address tokenOut;
         uint24 fee;
-        address recipient;
-        uint256 deadline;
+        address recipient; // <-- hier, KEIN deadline!
         uint256 amountOut;
         uint256 amountInMaximum;
         uint160 sqrtPriceLimitX96;
@@ -97,66 +96,36 @@ interface ISwapRouter {
     ) external payable returns (uint256 amountIn);
 }
 
-/*//////////////////////////////////////////////////////////////
-                          HELPER CONTRACT
-//////////////////////////////////////////////////////////////*/
-
 /**
  * @title AaveUnwindHelper
- * @notice Stateless helper that closes an Aave V3 position owned by the caller (a vault)
+ * @notice Stateless helper that closes an Aave V3 position owned by the caller
  *         using a PancakeSwap V3 flash loan. No capital needs to be added.
  *
- *         The vault MUST grant this helper two approvals before calling unwindPosition:
- *           1. approve(helper, MAX) on the aToken of the collateral
- *           2. (only if using stable debt) nothing extra
- *
- *         Flow (single transaction):
- *           1. Helper triggers flash() on a PancakeSwap V3 pool for the debt amount.
- *           2. Pool sends debt token to helper and calls pancakeV3FlashCallback.
- *           3. In the callback:
- *              a. repay the vault's Aave debt in full
- *              b. pull the vault's aTokens via transferFrom
- *              c. withdraw the full collateral from Aave
- *              d. swap just enough collateral -> debt token to repay the flash loan + fee
- *              e. return flash loan + fee to the pool
- *              f. send remaining collateral (the vault's net equity) back to the vault
- *
- *         The helper holds no state between calls and stores no user funds.
+ *         Supports sending the leftover collateral + any debt-token surplus
+ *         directly to a final recipient (e.g. the end user), skipping the vault.
  */
 contract AaveUnwindHelper {
-    /*//////////////////////////////////////////////////////////////
-                              IMMUTABLES
-    //////////////////////////////////////////////////////////////*/
-
     IAavePool public immutable AAVE_POOL;
     IPancakeV3Factory public immutable PANCAKE_V3_FACTORY;
     ISwapRouter public immutable SWAP_ROUTER;
 
-    /*//////////////////////////////////////////////////////////////
-                                ERRORS
-    //////////////////////////////////////////////////////////////*/
-
     error InvalidCaller();
     error InvalidPool();
-    error FlashAmountMismatch();
     error InsufficientCollateralForSwap();
     error ZeroDebt();
-
-    /*//////////////////////////////////////////////////////////////
-                                STRUCTS
-    //////////////////////////////////////////////////////////////*/
+    error ZeroRecipient();
 
     struct UnwindParams {
-        address collateralAsset; // e.g. WBNB
-        address debtAsset; // e.g. USDC
-        uint256 debtAmount; // total debt incl. small buffer; use type(uint256).max semantics explained below
-        uint256 rateMode; // 1 = stable, 2 = variable (on BNB it's ~always 2)
-        uint24 flashPoolFee; // fee tier of the PancakeSwap V3 pool used for the flash loan
-        uint24 swapPoolFee; // fee tier of the PancakeSwap V3 pool used for the swap
-        uint256 maxCollateralIn; // slippage protection: maximum collateral you accept to spend on the swap
+        address collateralAsset;
+        address debtAsset;
+        uint256 debtAmount;
+        uint256 rateMode;
+        uint24 flashPoolFee;
+        uint24 swapPoolFee;
+        uint256 maxCollateralIn;
+        address finalRecipient; // NEW: where remaining collateral + debt surplus go
     }
 
-    /// @dev Data passed through the flash callback. `vault` is the position owner.
     struct FlashCallbackData {
         address vault;
         address collateralAsset;
@@ -164,14 +133,11 @@ contract AaveUnwindHelper {
         address aToken;
         uint256 debtAmount;
         uint256 rateMode;
-        uint24 flashPoolFee;
         uint24 swapPoolFee;
         uint256 maxCollateralIn;
+        address flashPool;
+        address finalRecipient;
     }
-
-    /*//////////////////////////////////////////////////////////////
-                              CONSTRUCTOR
-    //////////////////////////////////////////////////////////////*/
 
     constructor(
         address aavePool,
@@ -183,32 +149,19 @@ contract AaveUnwindHelper {
         SWAP_ROUTER = ISwapRouter(swapRouter);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                           CALLBACK GUARD
-    //////////////////////////////////////////////////////////////*/
-
-    // Set to the flash pool address for the duration of unwindPosition, then cleared.
-    // The callback verifies msg.sender against this value — not against attacker-supplied data.
-    address private _pendingFlashPool;
-
-    /*//////////////////////////////////////////////////////////////
-                          MAIN ENTRY POINT
-    //////////////////////////////////////////////////////////////*/
-
     /**
-     * @notice Unwinds the Aave V3 position of msg.sender (the vault).
-     * @param p Parameters describing the position and swap routing.
-     *
-     * @dev msg.sender is treated as the vault. The vault must have approved this
-     *      helper on the aToken of `collateralAsset` for at least its full aToken balance.
+     * @notice Unwinds msg.sender's Aave V3 position and forwards proceeds to finalRecipient.
      */
     function unwindPosition(UnwindParams calldata p) external {
-        address vault = msg.sender;
-        address aToken = _getAToken(p.collateralAsset);
-
         if (p.debtAmount == 0) revert ZeroDebt();
+        if (p.finalRecipient == address(0)) revert ZeroRecipient();
 
-        // Resolve the flash loan pool: (debtAsset, collateralAsset, flashPoolFee)
+        address vault = msg.sender;
+
+        (, , , , , , , , address aToken, , , , , , ) = AAVE_POOL.getReserveData(
+            p.collateralAsset
+        );
+
         address flashPool = PANCAKE_V3_FACTORY.getPool(
             p.debtAsset,
             p.collateralAsset,
@@ -216,15 +169,10 @@ contract AaveUnwindHelper {
         );
         if (flashPool == address(0)) revert InvalidPool();
 
-        // Determine which side (token0/token1) the debt token is on
         address token0 = IPancakeV3Pool(flashPool).token0();
-        uint256 amount0 = 0;
-        uint256 amount1 = 0;
-        if (p.debtAsset == token0) {
-            amount0 = p.debtAmount;
-        } else {
-            amount1 = p.debtAmount;
-        }
+        (uint256 amount0, uint256 amount1) = (p.debtAsset == token0)
+            ? (p.debtAmount, uint256(0))
+            : (uint256(0), p.debtAmount);
 
         FlashCallbackData memory cb = FlashCallbackData({
             vault: vault,
@@ -233,82 +181,89 @@ contract AaveUnwindHelper {
             aToken: aToken,
             debtAmount: p.debtAmount,
             rateMode: p.rateMode,
-            flashPoolFee: p.flashPoolFee,
             swapPoolFee: p.swapPoolFee,
-            maxCollateralIn: p.maxCollateralIn
+            maxCollateralIn: p.maxCollateralIn,
+            flashPool: flashPool,
+            finalRecipient: p.finalRecipient
         });
 
-        // Lock the expected callback origin before triggering the flash loan.
-        _pendingFlashPool = flashPool;
-
-        // Trigger the flash loan. Execution continues in pancakeV3FlashCallback.
         IPancakeV3Pool(flashPool).flash(
             address(this),
             amount0,
             amount1,
             abi.encode(cb)
         );
-
-        // Clear the guard after the callback has returned.
-        _pendingFlashPool = address(0);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                         FLASH LOAN CALLBACK
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice PancakeSwap V3 flash callback. Must repay fee0/fee1 in full before returning.
-     */
     function pancakeV3FlashCallback(
         uint256 fee0,
         uint256 fee1,
         bytes calldata data
     ) external {
         FlashCallbackData memory cb = abi.decode(data, (FlashCallbackData));
+        if (msg.sender != cb.flashPool) revert InvalidCaller();
 
-        // Security: verify caller against the pool we set in storage — not against
-        // attacker-supplied data. This prevents anyone from calling this function
-        // directly with crafted data where cb.flashPool == msg.sender.
-        if (msg.sender != _pendingFlashPool) revert InvalidCaller();
-
-        // Figure out the fee that applies to the debt token side.
         uint256 flashFee;
         {
-            address token0 = IPancakeV3Pool(msg.sender).token0();
+            address token0 = IPancakeV3Pool(cb.flashPool).token0();
             flashFee = (cb.debtAsset == token0) ? fee0 : fee1;
         }
         uint256 amountOwedToPool = cb.debtAmount + flashFee;
 
-        // 1) Repay the vault's Aave debt.
-        //    Using type(uint256).max lets Aave cap at the actual debt,
-        //    refunding any overshoot as a smaller actual transfer.
-        _safeApprove(cb.debtAsset, address(AAVE_POOL), cb.debtAmount);
+        // 1) Read the vault's CURRENT debt balance (scaled by index to underlying units).
+        //    We MUST pass an explicit amount here: Aave reverts with
+        //    NoExplicitAmountToRepayOnBehalf() (0xcd3779c3) if amount == type(uint256).max
+        //    AND msg.sender != onBehalfOf.
+        (
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            address stableDebtToken,
+            address variableDebtToken,
+            ,
+            ,
+            ,
+
+        ) = AAVE_POOL.getReserveData(cb.debtAsset);
+
+        address debtTokenToRead = cb.rateMode == 2
+            ? variableDebtToken
+            : stableDebtToken;
+        uint256 actualDebt = IERC20(debtTokenToRead).balanceOf(cb.vault);
+
+        // Repay either the full debt (if we flashed enough) or our flash amount.
+        uint256 repayAmount = actualDebt <= cb.debtAmount
+            ? actualDebt
+            : cb.debtAmount;
+
+        _safeApprove(cb.debtAsset, address(AAVE_POOL), repayAmount);
         uint256 repaid = AAVE_POOL.repay(
             cb.debtAsset,
-            type(uint256).max,
+            repayAmount,
             cb.rateMode,
             cb.vault
         );
 
-        // If we flashed more than the actual debt, the surplus stays on this contract
-        // and will be sent back to the vault at the end.
         uint256 debtSurplus = cb.debtAmount - repaid;
 
-        // 2) Pull the vault's aTokens to this helper so we become the owner
-        //    of that share of the Aave position.
+        // 2) Pull vault's aTokens.
         uint256 aBal = IERC20(cb.aToken).balanceOf(cb.vault);
         IERC20(cb.aToken).transferFrom(cb.vault, address(this), aBal);
 
-        // 3) Withdraw the full collateral. type(uint256).max means "all of my aToken balance".
+        // 3) Withdraw full collateral.
         uint256 collateralOut = AAVE_POOL.withdraw(
             cb.collateralAsset,
             type(uint256).max,
             address(this)
         );
 
-        // 4) Swap just enough collateral -> debt token to cover the flash loan repayment.
-        //    We already have `debtSurplus` from step 1, so only need the rest.
+        // 4) Swap just enough collateral -> debt token.
         uint256 debtStillNeeded = amountOwedToPool - debtSurplus;
 
         _safeApprove(
@@ -322,55 +277,58 @@ contract AaveUnwindHelper {
                 tokenOut: cb.debtAsset,
                 fee: cb.swapPoolFee,
                 recipient: address(this),
-                deadline: block.timestamp,
                 amountOut: debtStillNeeded,
                 amountInMaximum: cb.maxCollateralIn,
                 sqrtPriceLimitX96: 0
             })
         );
-
         if (collateralSpent > collateralOut)
             revert InsufficientCollateralForSwap();
 
-        // 5) Repay the flash loan to the pool.
-        IERC20(cb.debtAsset).transfer(msg.sender, amountOwedToPool);
+        // 5) Repay flash loan.
+        IERC20(cb.debtAsset).transfer(cb.flashPool, amountOwedToPool);
 
-        // 6) Forward remaining collateral (the vault's net equity) back to the vault.
-        uint256 remainingCollateral = collateralOut - collateralSpent;
+        // 6) Forward ALL remaining balances on this contract to finalRecipient.
+        //    - Collateral remainder = net equity
+        //    - Debt-token remainder = any dust from over-quote/flashed surplus not used
+        uint256 remainingCollateral = IERC20(cb.collateralAsset).balanceOf(
+            address(this)
+        );
         if (remainingCollateral > 0) {
-            IERC20(cb.collateralAsset).transfer(cb.vault, remainingCollateral);
+            IERC20(cb.collateralAsset).transfer(
+                cb.finalRecipient,
+                remainingCollateral
+            );
+        }
+        uint256 remainingDebtToken = IERC20(cb.debtAsset).balanceOf(
+            address(this)
+        );
+        if (remainingDebtToken > 0) {
+            IERC20(cb.debtAsset).transfer(
+                cb.finalRecipient,
+                remainingDebtToken
+            );
         }
 
-        // Clean up dust approvals
+        // Cleanup approvals.
         _safeApprove(cb.debtAsset, address(AAVE_POOL), 0);
         _safeApprove(cb.collateralAsset, address(SWAP_ROUTER), 0);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                               INTERNAL
-    //////////////////////////////////////////////////////////////*/
-
-    function _getAToken(address asset) internal view returns (address aToken) {
-        (, , , , , , , , aToken, , , , , , ) = AAVE_POOL.getReserveData(asset);
-    }
-
-    /// @dev Some tokens (e.g. USDT) require setting allowance to 0 before changing it.
     function _safeApprove(
         address token,
         address spender,
         uint256 amount
     ) internal {
-        // Reset to 0 first, ignore failure (some tokens revert on non-zero -> non-zero).
-        (bool ok, bytes memory ret) = token.call(
+        (bool ok1, ) = token.call(
             abi.encodeWithSelector(IERC20.approve.selector, spender, 0)
         );
-        ok;
-        ret; // silence warnings
-        (bool ok2, bytes memory ret2) = token.call(
+        ok1;
+        (bool ok2, bytes memory ret) = token.call(
             abi.encodeWithSelector(IERC20.approve.selector, spender, amount)
         );
         require(
-            ok2 && (ret2.length == 0 || abi.decode(ret2, (bool))),
+            ok2 && (ret.length == 0 || abi.decode(ret, (bool))),
             "approve failed"
         );
     }
