@@ -24,5 +24,10 @@
   "ApxFinanceActionsModule": {
     "apxRouter": "0x1b6F2d3844C6ae7D56ceb3C3643b9060ba28FEb0",
     "brokerId": 2067
+  },
+  "AaveUnwindHelperModule": {
+    "pool": "0x6807dc923806fE8Fd134338EABCA509979a7e0cB",
+    "factory": "0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865",
+    "swapRouter": "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4"
   }
 }

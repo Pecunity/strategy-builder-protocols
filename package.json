@@ -12,7 +12,8 @@
     "deploy:pancakeSwapV3:conditions": "hardhat run scripts/deploy-pankace-swap-v3-conditions.ts --network $NETWORK",
     "deploy:pancakeSwapV3:token-getter": "hardhat run scripts/deploy-pankace-swap-v3-token-getter.ts --network $NETWORK",
     "deploy:apxFinance:actions": "hardhat run scripts/deploy-apx-finance-actions.ts --network $NETWORK",
-    "deploy:apxFinance:conditions": "hardhat run scripts/deploy-apx-finance-conditions.ts --network $NETWORK"
+    "deploy:apxFinance:conditions": "hardhat run scripts/deploy-apx-finance-conditions.ts --network $NETWORK",
+    "deploy:aaveV3:unwindHelper": "hardhat run scripts/deploy-aave-unwind-helper.ts --network $NETWORK"
   },
   "keywords": [],
   "author": "",

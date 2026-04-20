@@ -26,6 +26,7 @@ const config: HardhatUserConfig = {
         enabled: true, // Enable optimization
         runs: 200, // Set the number of optimization runs (200 is a common balance)
       },
+      viaIR: true,
     },
   },
   networks: {
